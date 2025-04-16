@@ -6,8 +6,8 @@ import Sidebar from './components/Sidebar'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Dashboard App',
-  description: 'Next.js App with Sidebar Navigation',
+  title: 'WeaveSuite',
+  description: 'Generate a suite of woven system-level tests using AI',
 }
 
 export default function RootLayout({

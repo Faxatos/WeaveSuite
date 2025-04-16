@@ -1,13 +1,41 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import Graph from './components/Graph';
 
+interface GraphNode {
+  data: {
+    id: string;
+    label: string;
+    serviceType: string;
+  };
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+interface GraphEdge {
+  data: {
+    id: string;
+    source: string;
+    target: string;
+    label: string;
+  };
+}
+
+interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 export default function Home() {
-  const [graphData, setGraphData] = useState(null);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
-    async function fetchData() {
+    const fetchData = async () => {
       try {
         const response = await fetch('/api/graph');
         const data = await response.json();
@@ -17,26 +45,50 @@ export default function Home() {
         console.error('Error fetching graph data:', error);
         setLoading(false);
       }
-    }
+    };
 
     fetchData();
   }, []);
 
+  const handleSave = async (updatedData: GraphData) => {
+    setSaveStatus('Saving...');
+    try {
+      const response = await fetch('/api/graph', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+      
+      if (response.ok) {
+        setSaveStatus('Changes saved successfully!');
+        setTimeout(() => setSaveStatus(''), 3000);
+      } else {
+        setSaveStatus('Error saving changes');
+      }
+    } catch (error) {
+      console.error('Error saving graph data:', error);
+      setSaveStatus('Error saving changes');
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-full">Loading...</div>;
+  }
+
   return (
-    <div className="space-y-6 h-full flex flex-col">
-      <h1 className="text-2xl font-bold">Microservices Architecture</h1>
-      <div className="bg-white p-6 rounded-lg shadow-md flex-1">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    <div className="h-full flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Microservices Architecture</h1>
+        {saveStatus && (
+          <div className={`save-status ${saveStatus.includes('Error') ? 'save-status-error' : 'save-status-success'}`}>
+            {saveStatus}
           </div>
-        ) : graphData ? (
-          <div className="h-full">
-            <Graph data={graphData} />
-          </div>
-        ) : (
-          <p>Failed to load graph data.</p>
         )}
+      </div>
+      <div className="flex-1 border border-gray-300 rounded overflow-hidden">
+        {graphData && <Graph initialData={graphData} onSave={handleSave} />}
       </div>
     </div>
   );
