@@ -1,12 +1,16 @@
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from src.db.database import Base
 
 class Microservice(Base):
     __tablename__ = "microservices"
+    __table_args__ = (
+        UniqueConstraint('name', 'namespace', name='uq_microservice_name_namespace'),
+    )
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True)
-    endpoint = Column(String)
+    name = Column(String)
+    namespace = Column(String)
+    endpoint = Column(String, unique=True)
     specs = relationship("OpenAPISpec", back_populates="microservice")
 
 class OpenAPISpec(Base):
