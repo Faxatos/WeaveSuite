@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Boolean, DateTime, Integer, String, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from src.db.database import Base
 
 class Microservice(Base):
@@ -36,6 +37,8 @@ class Test(Base):
     code = Column(String)  #generated test code
     spec_id = Column(Integer, ForeignKey("openapi_specs.id"))  #link to OpenAPI spec
     spec = relationship("OpenAPISpec")
+    result = Column(Boolean, nullable=True)
+    executed_at = Column(DateTime, nullable=True)
 
 class TestProxyFailure(Base):
     __tablename__ = "test_proxy_failures"
