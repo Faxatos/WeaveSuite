@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Boolean, DateTime, Integer, String, JSON, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Float, DateTime, Integer, String, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from src.db.database import Base
@@ -12,7 +12,21 @@ class Microservice(Base):
     name = Column(String)
     namespace = Column(String)
     endpoint = Column(String, unique=True)
+    x = Column(Float, default=0.0)
+    y = Column(Float, default=0.0)
     specs = relationship("OpenAPISpec", back_populates="microservice")
+    outgoing_links = relationship("Link", foreign_keys="Link.source_id", back_populates="source")
+    incoming_links = relationship("Link", foreign_keys="Link.target_id", back_populates="target")
+
+class Link(Base):
+    __tablename__ = "links"
+    id = Column(Integer, primary_key=True)
+    source_id = Column(Integer, ForeignKey("microservices.id"), nullable=False)
+    target_id = Column(Integer, ForeignKey("microservices.id"), nullable=False)
+    label = Column(String)
+    
+    source = relationship("Microservice", foreign_keys=[source_id], back_populates="outgoing_links")
+    target = relationship("Microservice", foreign_keys=[target_id], back_populates="incoming_links")
 
 class OpenAPISpec(Base):
     __tablename__ = "openapi_specs"
@@ -37,8 +51,11 @@ class Test(Base):
     code = Column(String)  #generated test code
     spec_id = Column(Integer, ForeignKey("openapi_specs.id"))  #link to OpenAPI spec
     spec = relationship("OpenAPISpec")
-    result = Column(Boolean, nullable=True)
-    executed_at = Column(DateTime, nullable=True)
+    last_execution = Column(DateTime, nullable=True)
+    status = Column(String, nullable=True)  # passed, failed, skipped, error
+    execution_time = Column(Float, nullable=True)
+    error_message = Column(String, nullable=True)
+    services_visited = Column(String, nullable=True)  # JSON array as string
 
 class TestProxyFailure(Base):
     __tablename__ = "test_proxy_failures"
