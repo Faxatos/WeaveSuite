@@ -26,22 +26,29 @@ class DiscoveryService:
                 name = service.metadata.name
                 namespace = service.metadata.namespace
                 
+                port = service.spec.ports[0].port
+                endpoint = f"{name}.{namespace}.svc.cluster.local:{port}"
+
                 if (name, namespace) not in existing_services:
                     try:
                         new_ms = Microservice(
                             name=name,
                             namespace=namespace,
-                            endpoint=f"{name}.{namespace}.svc.cluster.local"
+                            endpoint=endpoint
                         )
                         self.db.add(new_ms)
-                        self.db.commit()
                         new_services.append(name)
                     except exc.IntegrityError:
                         self.db.rollback()
                         logging.warning(f"Duplicate detected: {name}.{namespace}")
             
+            self.db.commit()
             return {"discovered": new_services}
             
+        except client.exceptions.ApiException as e:  # More specific exception
+            logging.error(f"Kubernetes API error: {str(e)}")
+            self.db.rollback()
+            raise
         except Exception as e:
             logging.error(f"Discovery failed: {str(e)}")
             self.db.rollback()
