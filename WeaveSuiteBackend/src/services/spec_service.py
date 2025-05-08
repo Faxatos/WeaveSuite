@@ -2,6 +2,7 @@ from datetime import datetime
 import requests
 from sqlalchemy.orm import Session
 import logging
+from urllib.parse import urljoin
 from src.db.models import OpenAPISpec, Microservice
 
 class SpecService:
@@ -14,20 +15,28 @@ class SpecService:
         services = self.db.query(Microservice).all()
         
         for service in services:
-            try:
-                # Use the stored endpoint from the Microservice model
-                url = f"http://{service.endpoint}/openapi.json"
-                response = requests.get(url, timeout=5)
-                
-                if response.status_code == 200:
-                    self.store_spec(
-                        microservice_id=service.id,
-                        spec=response.json()
-                    )
-                    updated.append(service.name)
+            spec = None
+            for path in ['openapi.json', 'swagger.json']:
+                try:
+                    #construct URL using urljoin
+                    base_url = f"http://{service.endpoint}"
+                    full_url = urljoin(base_url, path)
+                    response = requests.get(full_url, timeout=5)
                     
-            except Exception as e:
-                logging.warning(f"Failed to fetch spec for {service.name}: {str(e)}")
+                    if response.status_code == 200:
+                        spec = response.json()
+                        break  # Exit loop on first successful fetch
+                except Exception as e:
+                    logging.debug(f"Attempt failed for {service.name} at {path}: {str(e)}")
+            
+            if spec is not None:
+                self.store_spec(
+                    microservice_id=service.id,
+                    spec=spec
+                )
+                updated.append(service.name)
+            else:
+                logging.warning(f"Failed to fetch spec for {service.name} from both endpoints")
         
         return {"updated": updated}
     
