@@ -25,3 +25,11 @@ async def trigger_update(background_tasks: BackgroundTasks, db: Session = Depend
         lambda: SpecService(db).fetch_and_store_specs()
     )
     return {"message": "Update process started"}
+
+@app.post("/api/generate-tests")
+async def trigger_test_generation(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Generate tests from OpenAPI specs"""
+    background_tasks.add_task(
+        lambda: GenerationService(db).generate_and_store_tests()
+    )
+    return {"message": "Test generation process started"}
