@@ -14,6 +14,7 @@ class Microservice(Base):
     endpoint = Column(String, unique=True)
     x = Column(Float, default=0.0)
     y = Column(Float, default=0.0)
+    service_type = Column(String, default='microservice')
     specs = relationship("OpenAPISpec", back_populates="microservice")
     outgoing_links = relationship("Link", foreign_keys="Link.source_id", back_populates="source")
     incoming_links = relationship("Link", foreign_keys="Link.target_id", back_populates="target")
