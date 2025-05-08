@@ -25,6 +25,11 @@ class DiscoveryService:
             for service in services:
                 name = service.metadata.name
                 namespace = service.metadata.namespace
+                labels = service.metadata.labels or {}
+
+                #ToDo: fix logic to understand if the service is a gateway or microservice
+                is_gateway = labels.get("gateway", "").lower() == "true"
+                service_type = "gateway" if is_gateway else "microservice"
                 
                 port = service.spec.ports[0].port
                 endpoint = f"{name}.{namespace}.svc.cluster.local:{port}"
@@ -34,7 +39,8 @@ class DiscoveryService:
                         new_ms = Microservice(
                             name=name,
                             namespace=namespace,
-                            endpoint=endpoint
+                            endpoint=endpoint,
+                            service_type=service_type
                         )
                         self.db.add(new_ms)
                         new_services.append(name)
