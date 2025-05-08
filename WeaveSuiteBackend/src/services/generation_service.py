@@ -7,10 +7,10 @@ from typing import List, Dict, Any
 import openai
 from sqlalchemy.orm import Session
 
-from db.models import OpenAPISpec, Test
+from db.models import OpenAPISpec, Test, Microservice, Link
 
 
-class TestGenerator:
+class GenerationService:
     def __init__(self, db: Session):
         self.db = db
         # Get API key from environment variable
@@ -27,70 +27,116 @@ class TestGenerator:
             if not specs:
                 logging.warning("No OpenAPI specs found in database")
                 return {"status": "error", "message": "No OpenAPI specs found in database"}
-                
-            # Combine specs into a single dictionary for the LLM prompt
-            combined_specs = {}
-            for spec in specs:
-                combined_specs[spec.id] = spec.spec
-                
-            # Generate tests using the LLM
-            test_code = self._generate_tests_with_llm(specs, combined_specs)
             
-            # Store tests in the database
-            tests_created = self._store_tests(test_code, specs)
-            
-            return {
-                "status": "success", 
-                "message": f"Generated and stored {tests_created} tests",
-                "tests_created": tests_created
+            # Determine if this is the first run (no links exist yet)
+            first_run = self.db.query(Link).count() == 0
+                
+            # Build microservice info for the prompt
+            microservice_info = {
+                spec.id: {
+                    "title": spec.spec.get("info", {}).get("title", f"Service_{spec.id}"),
+                    "name": spec.microservice.name,
+                    "namespace": spec.microservice.namespace
+                }
+                for spec in specs
             }
+
+            # Generate via LLM
+            response_data = self._generate_with_llm(microservice_info, specs, first_run)
+            
+            tests_created = self._store_tests(response_data.get("tests", ""), specs)
+            result = {"status": "success", "tests_created": tests_created}
+
+            if first_run:
+                positions_updated = self._store_positions(response_data.get("positions", []))
+                links_created = self._store_links(response_data.get("links", []))
+                result.update({"positions_updated": positions_updated, "links_created": links_created})
+
+            return result
             
         except Exception as e:
             logging.error(f"Failed to generate tests: {str(e)}")
             return {"status": "error", "message": f"Failed to generate tests: {str(e)}"}
     
-    def _generate_tests_with_llm(self, specs: List[OpenAPISpec], combined_specs: Dict[int, Dict]) -> str:
+    def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec], include_layout: bool) -> Dict[str, Any]:
         """Generate test code using OpenAI API"""
         try:
             # Create a prompt for the LLM
-            prompt = (
-                "You are a QA engineer. Given these OpenAPI specs, generate a pytest suite\n"
-                "that exercises all microservices via 'http://api-gateway'.\n"
-                "Name tests as test_<service>_<path>_<method>.\n"
-                "Include assertions for status codes and response schemas.\n"
-                "Return only executable Python code.\n\n" +
-                json.dumps({spec.id: combined_specs[spec.id].get('info', {}).get('title', f'Service_{spec.id}') 
-                           for spec in specs}, indent=2) +
-                "\n\nHere are the full OpenAPI specs:\n" +
-                json.dumps(combined_specs, indent=2)
+            intro = (
+            "You are a QA engineer. Generate pytest tests that hit each endpoint via http://api-gateway. "
+            "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas."
             )
-            
-            # Call the OpenAI API
+            if include_layout:
+                intro += (
+                    " Also provide for each microservices positions (name, namespace, x, y) and directional links "
+                    "(source_name, source_namespace, target_name, target_namespace, label) that connects them as a graph."
+                )
+
+            payload = {
+                "microservices": microservice_info,
+                "openapi_specs": {spec.id: spec.spec for spec in specs}
+            }
+
+            messages = [
+                {"role": "system", "content": intro},
+                {"role": "user", "content": json.dumps(payload)}
+            ]
+
             resp = openai.ChatCompletion.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
                 temperature=0.2,
                 max_tokens=4000,
             )
-            
-            # Extract the generated code from the response
-            test_code = resp.choices[0].message.content
-            
-            # Clean up the code (remove markdown code blocks if present)
-            if test_code.startswith("```python"):
-                test_code = test_code.split("```python")[1]
-            if test_code.endswith("```"):
-                test_code = test_code.split("```")[0]
-                
-            test_code = test_code.strip()
-            
-            logging.info(f"Generated test code with {test_code.count('def test_')} test functions")
-            return test_code
+
+            content = resp.choices[0].message.content
+            # strip markdown fences
+            if content.startswith("```json"):
+                content = content[len("```json"):].strip().strip('`')
+            return json.loads(content)
             
         except Exception as e:
             logging.error(f"Error calling OpenAI API: {str(e)}")
             raise
+
+    def _store_positions(self, positions: List[Dict]) -> int:
+        """Update microservice coordinates"""
+        updated = 0
+        for pos in positions:
+            ms = self.db.query(Microservice).filter_by(
+                name=pos["name"], 
+                namespace=pos["namespace"]
+            ).first()
+            if ms:
+                ms.x = pos.get("x", 0.0)
+                ms.y = pos.get("y", 0.0)
+                updated += 1
+        self.db.commit()
+        return updated
     
+    def _store_links(self, links: List[Dict]) -> int:
+        """Replace existing links with new ones"""
+        #self.db.query(Link).delete()  # Clear old links
+        created = 0
+        for link in links:
+            source = self._get_microservice(link["source_name"], link["source_namespace"])
+            target = self._get_microservice(link["target_name"], link["target_namespace"])
+            if source and target:
+                self.db.add(Link(
+                    source_id=source.id,
+                    target_id=target.id,
+                    label=link.get("label", "")
+                ))
+                created += 1
+        self.db.commit()
+        return created
+    
+    def _get_microservice(self, name: str, namespace: str) -> Microservice:
+        return self.db.query(Microservice).filter_by(
+            name=name, 
+            namespace=namespace
+        ).first()
+        
     def _store_tests(self, test_code: str, specs: List[OpenAPISpec]) -> int:
         """Parse and store individual tests from the generated code"""
         # Split the test code into individual test functions
@@ -149,30 +195,3 @@ class TestGenerator:
             raise
             
         return tests_created
-        
-    def get_test_coverage_report(self) -> Dict[str, Any]:
-        """Generate a report on test coverage across microservices"""
-        specs = self.db.query(OpenAPISpec).all()
-        tests = self.db.query(Test).all()
-        
-        coverage = {}
-        
-        for spec in specs:
-            service_name = spec.spec.get('info', {}).get('title', f'Service_{spec.id}')
-            paths = spec.spec.get('paths', {})
-            total_endpoints = sum(len(methods) for methods in paths.values())
-            
-            # Count tests associated with this spec
-            spec_tests = [test for test in tests if test.spec_id == spec.id]
-            
-            coverage[service_name] = {
-                "total_endpoints": total_endpoints,
-                "tests_count": len(spec_tests),
-                "coverage_percentage": round(len(spec_tests) / total_endpoints * 100, 2) if total_endpoints else 0
-            }
-            
-        return {
-            "overall_services": len(specs),
-            "overall_tests": len(tests),
-            "service_coverage": coverage
-        }
