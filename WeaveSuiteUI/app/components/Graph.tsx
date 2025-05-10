@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import cytoscape from 'cytoscape';
 import '../styles/graph.css';
 
-interface GraphNode {
+interface MicroserviceNode {
   data: {
-    id: string;
-    label: string;
-    serviceType: string;
+    id: number;
+    name: string;
+    namespace: string;
+    endpoint: string;
+    service_type: string;
   };
   position: {
     x: number;
@@ -16,18 +18,18 @@ interface GraphNode {
   };
 }
 
-interface GraphEdge {
+interface ServiceLink {
   data: {
-    id: string;
-    source: string;
-    target: string;
+    id: number;
+    source: number;
+    target: number;
     label: string;
   };
 }
 
 interface GraphData {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
+  nodes: MicroserviceNode[];
+  edges: ServiceLink[];
 }
 
 interface GraphProps {
@@ -37,25 +39,31 @@ interface GraphProps {
 
 export default function Graph({ initialData, onSave }: GraphProps) {
   const [graphData, setGraphData] = useState<GraphData>(initialData);
-  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [selectedElement, setSelectedElement] = useState<cytoscape.SingularElementReturnValue | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [showNodeModal, setShowNodeModal] = useState(false);
   const [showEdgeModal, setShowEdgeModal] = useState(false);
-  const [newNodeName, setNewNodeName] = useState('');
-  const [edgeSource, setEdgeSource] = useState<string | null>(null);
-  const [edgeTarget, setEdgeTarget] = useState<string | null>(null);
-  const [edgeLabel, setEdgeLabel] = useState('calls');
-  const [saveStatus, setSaveStatus] = useState('');
+  const [newNodeData, setNewNodeData] = useState({
+    name: '',
+    namespace: 'default',
+    endpoint: '',
+    service_type: 'microservice'
+  });
+  const [edgeData, setEdgeData] = useState({
+    source: 0,
+    target: 0,
+    label: 'calls'
+  });
   
-  const cyRef = useRef<any>(null);
+  const cyRef = useRef<cytoscape.Core | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const cytoscapeStylesheet = [
+  const cytoscapeStylesheet: cytoscape.StylesheetCSS[] = [
     {
       selector: 'node',
-      style: {
+      css: {
         'background-color': '#4299e1',
-        'label': 'data(label)',
+        'label': 'data(name)',
         'color': '#000000',
         'text-valign': 'center',
         'text-halign': 'center',
@@ -67,14 +75,14 @@ export default function Graph({ initialData, onSave }: GraphProps) {
       }
     },
     {
-      selector: 'node[serviceType = "gateway"]',
-      style: {
+      selector: 'node[service_type = "gateway"]',
+      css: {
         'background-color': '#f6ad55',
       }
     },
     {
       selector: 'edge',
-      style: {
+      css: {
         'width': 2,
         'line-color': '#a0aec0',
         'target-arrow-color': '#a0aec0',
@@ -85,77 +93,173 @@ export default function Graph({ initialData, onSave }: GraphProps) {
         'text-rotation': 'autorotate',
         'text-background-opacity': 1,
         'text-background-color': 'white',
-        'text-background-padding': 3,
+        'text-background-padding': '3',
       }
     },
     {
       selector: '.selected',
-      style: {
+      css: {
         'border-width': 3,
         'border-color': '#ff0000'
       }
     }
   ];
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // Initialize cytoscape
-    const cy = cytoscape({
-      container: containerRef.current,
-      elements: [...graphData.nodes, ...graphData.edges],
-      style: cytoscapeStylesheet,
-      layout: { name: 'preset' },
-      userZoomingEnabled: true,
-      userPanningEnabled: true,
-      boxSelectionEnabled: false,
-    });
-
-    cyRef.current = cy;
-
-    // Event listeners
-    cy.on('tap', 'node, edge', (event) => {
-      if (!editMode) return;
-      
-      const target = event.target;
-      
-      // Remove existing selection
-      cy.elements().removeClass('selected');
-      
-      // Add selection to current element
-      target.addClass('selected');
-      setSelectedNode(target);
-
-      // If a node is selected, set it as edge source for potential edge creation
-      if (target.isNode()) {
-        setEdgeSource(target.id());
-      }
-    });
+  // Function to properly convert graph data for Cytoscape
+  const convertDataForCytoscape = () => {
+    // Create a set of valid node IDs for validation
+    const validNodeIds = new Set(graphData.nodes.map(node => node.data.id));
     
-    cy.on('tap', function(event) {
-      // If clicking on background, deselect
-      if (event.target === cy) {
-        cy.elements().removeClass('selected');
-        setSelectedNode(null);
+    // Log all node IDs to verify what we have
+    console.log("Valid node IDs:", [...validNodeIds]);
+    
+    // Format nodes with string IDs for Cytoscape
+    const nodes = graphData.nodes.map(node => ({
+      data: {
+        id: String(node.data.id),
+        name: node.data.name,
+        namespace: node.data.namespace,
+        endpoint: node.data.endpoint,
+        service_type: node.data.service_type
+      },
+      position: {
+        x: Number(node.position.x),
+        y: Number(node.position.y)
       }
-    });
+    }));
+    
+    // Log the structure of the graphData.edges to understand the format
+    //console.log("First edge structure:", JSON.stringify(graphData.edges[0], null, 2));
+    //console.log("Edge 8 structure (one that works):", JSON.stringify(graphData.edges.find(e => e.data.id === 8), null, 2));
+    
+    // Log each edge's source and target for debugging
+    /*console.log("Edge sources and targets:");
+    graphData.edges.forEach(edge => {
+      console.log(`Edge ${edge.data.id}: source=${edge.data.source} (exists: ${validNodeIds.has(edge.data.source)}), target=${edge.data.target} (exists: ${validNodeIds.has(edge.data.target)})`);
+    });*/
+    
+    // Filter and format edges with string IDs and correct source/target references
+    // Make edge IDs unique by prefixing them with 'e' to avoid collision with node IDs
+    const edges = graphData.edges
+      .map(edge => {
+        return {
+          data: {
+            id: `e${edge.data.id}`, // Prefix with 'e' to make unique
+            source: String(edge.data.source),
+            target: String(edge.data.target),
+            label: edge.data.label || '' // Ensure label exists
+          }
+        };
+      });
+    
+    console.log("Converted nodes:", nodes);
+    console.log("Converted edges:", edges);
+    
+    return [...nodes, ...edges];
+  };
 
-    // Cleanup
+  // Function to initialize or update the graph
+  const initializeGraph = () => {
+    if (!containerRef.current) return;
+    
+    // Clean up existing instance if it exists
+    if (cyRef.current) {
+      cyRef.current.destroy();
+    }
+    
+    console.log("Initializing graph with data:", graphData);
+    
+    // Create a clean container to avoid initialization issues
+    while (containerRef.current.firstChild) {
+      containerRef.current.removeChild(containerRef.current.firstChild);
+    }
+    
+    // Convert the data to the format Cytoscape expects
+    const elements = convertDataForCytoscape();
+    
+    // Debug the elements array
+    //console.log('All elements being passed to cytoscape:', elements);
+    
+    try {
+      // Create new Cytoscape instance with all elements
+      const cy = cytoscape({
+        container: containerRef.current,
+        elements: elements as any, // Type assertion to fix TypeScript error
+        style: cytoscapeStylesheet,
+        layout: { name: 'preset' },
+        userZoomingEnabled: true,
+        userPanningEnabled: true,
+        boxSelectionEnabled: false,
+      });
+      
+      // Store reference
+      cyRef.current = cy;
+      
+      // Debug info
+      //console.log(`Created ${cy.nodes().length} nodes and ${cy.edges().length} edges`);
+      
+      // Detailed edge debugging
+      cy.edges().forEach(edge => {
+        const sourceNode = cy.getElementById(edge.data('source'));
+        const targetNode = cy.getElementById(edge.data('target'));
+        
+        /*console.log(`Edge ${edge.id()} inspection:`, {
+          edgeExists: edge.length > 0,
+          sourceNodeExists: sourceNode.length > 0,
+          targetNodeExists: targetNode.length > 0,
+          sourceId: edge.data('source'),
+          targetId: edge.data('target'),
+          label: edge.data('label')
+        });
+        
+        if ((sourceNode && sourceNode.length > 0) && (targetNode && targetNode.length > 0)) {
+          console.log(`Valid edge: ${edge.id()} from ${edge.data('source')} (${sourceNode.data('name')}) to ${edge.data('target')} (${targetNode.data('name')})`);
+        }*/
+      });
+      
+      // Set up event handlers
+      cy.on('tap', 'node, edge', (event) => {
+        if (!editMode) return;
+        
+        const target = event.target;
+        cy.elements().removeClass('selected');
+        target.addClass('selected');
+        setSelectedElement(target);
+        
+        if (target.isNode()) {
+          const nodeId = parseInt(target.id(), 10);
+          setEdgeData(prev => ({ ...prev, source: nodeId }));
+        }
+      });
+      
+      cy.on('tap', (event) => {
+        if (event.target === cy) {
+          cy.elements().removeClass('selected');
+          setSelectedElement(null);
+        }
+      });
+      
+      // Force a layout refresh
+      cy.layout({ name: 'preset' }).run();
+    } catch (error) {
+      console.error("Error initializing Cytoscape:", error);
+    }
+  };
+
+  // Initialize graph when data changes
+  useEffect(() => {
+    initializeGraph();
+    
     return () => {
-      if (cy) {
-        cy.destroy();
+      if (cyRef.current) {
+        cyRef.current.destroy();
       }
     };
   }, [graphData, editMode]);
 
-  // Find a suitable position for a new node
   const findNewNodePosition = () => {
-    // Default position
-    let position = { x: 300, y: 300 };
-    
-    // If there are existing nodes, try to find a position that doesn't overlap
+    const position = { x: 300, y: 300 };
     if (graphData.nodes.length > 0) {
-      // Calculate the center of existing nodes
       const center = graphData.nodes.reduce(
         (acc, node) => ({
           x: acc.x + node.position.x / graphData.nodes.length,
@@ -164,273 +268,236 @@ export default function Graph({ initialData, onSave }: GraphProps) {
         { x: 0, y: 0 }
       );
       
-      // Place the new node in a random direction from center
       const angle = Math.random() * Math.PI * 2;
-      const distance = 150 + Math.random() * 100; // Distance from center
+      const distance = 150 + Math.random() * 100;
       
-      position = {
-        x: center.x + Math.cos(angle) * distance,
-        y: center.y + Math.sin(angle) * distance
-      };
+      position.x = center.x + Math.cos(angle) * distance;
+      position.y = center.y + Math.sin(angle) * distance;
     }
-    
     return position;
   };
 
-  const openAddNodeModal = () => {
-    setNewNodeName('');
-    setShowNodeModal(true);
-  };
-
   const addNode = () => {
-    const name = newNodeName.trim() || 'New Service';
+    const newNodeId = Math.max(0, ...graphData.nodes.map(n => n.data.id)) + 1;
     const position = findNewNodePosition();
     
-    const newNode: GraphNode = {
+    const newNode: MicroserviceNode = {
       data: {
-        id: `service-${Date.now()}`,
-        label: name,
-        serviceType: 'microservice'
+        id: newNodeId,
+        name: newNodeData.name || `service-${newNodeId}`,
+        namespace: newNodeData.namespace,
+        endpoint: newNodeData.endpoint || `http://service-${newNodeId}:8080`, //ToDo: allow user to set endpoint
+        service_type: newNodeData.service_type
       },
       position
     };
     
     setGraphData(prev => ({
       nodes: [...prev.nodes, newNode],
-      edges: [...prev.edges]
+      edges: prev.edges
     }));
     
     setShowNodeModal(false);
-  };
-
-  const openAddEdgeModal = () => {
-    if (!selectedNode || !selectedNode.isNode()) {
-      alert('Please select a source node first');
-      return;
-    }
-    
-    setEdgeTarget(null);
-    setEdgeLabel('calls');
-    setShowEdgeModal(true);
+    setNewNodeData({
+      name: '',
+      namespace: 'default',
+      endpoint: '',
+      service_type: 'microservice'
+    });
   };
 
   const addEdge = () => {
-    if (!edgeSource || !edgeTarget) {
+    if (edgeData.source === 0 || edgeData.target === 0 || edgeData.source === edgeData.target) {
+      alert('Please select valid source and target nodes');
       return;
     }
     
-    const newEdge: GraphEdge = {
+    // Check if this edge already exists
+    const edgeExists = graphData.edges.some(
+      e => e.data.source === edgeData.source && e.data.target === edgeData.target
+    );
+    
+    if (edgeExists) {
+      alert('This connection already exists');
+      return;
+    }
+    
+    const newEdgeId = Math.max(0, ...graphData.edges.map(e => e.data.id)) + 1;
+    
+    const newEdge: ServiceLink = {
       data: {
-        id: `edge-${Date.now()}`,
-        source: edgeSource,
-        target: edgeTarget,
-        label: edgeLabel.trim() || 'calls'
+        id: newEdgeId,
+        source: edgeData.source,
+        target: edgeData.target,
+        label: edgeData.label.trim() || 'calls'
       }
     };
     
     setGraphData(prev => ({
-      nodes: [...prev.nodes],
+      nodes: prev.nodes,
       edges: [...prev.edges, newEdge]
     }));
     
     setShowEdgeModal(false);
-    setEdgeTarget(null);
+    setEdgeData({ source: 0, target: 0, label: 'calls' });
   };
 
   const removeSelected = () => {
-    if (!selectedNode) return;
+    if (!selectedElement) return;
     
-    const id = selectedNode.id();
+    const elementId = parseInt(selectedElement.data('id'), 10);
     
-    // Check if it's a node or edge
-    if (selectedNode.isNode()) {
-      // Also remove connected edges
-      setGraphData(prev => ({
-        nodes: prev.nodes.filter(node => node.data.id !== id),
-        edges: prev.edges.filter(edge => edge.data.source !== id && edge.data.target !== id)
-      }));
-    } else {
-      // It's an edge
-      setGraphData(prev => ({
-        nodes: [...prev.nodes],
-        edges: prev.edges.filter(edge => edge.data.id !== id)
-      }));
-    }
+    setGraphData(prev => ({
+      nodes: prev.nodes.filter(n => 
+        selectedElement.isNode() ? n.data.id !== elementId : true
+      ),
+      edges: prev.edges.filter(e => 
+        selectedElement.isEdge() ? e.data.id !== elementId : 
+        !(e.data.source === elementId || e.data.target === elementId)
+      )
+    }));
     
-    setSelectedNode(null);
+    setSelectedElement(null);
   };
 
   const handleSave = () => {
-    // Get the current positions from cytoscape
     const cy = cyRef.current;
     if (!cy) return;
 
     const updatedNodes = graphData.nodes.map(node => {
-      const cyNode = cy.getElementById(node.data.id);
+      const element = cy.getElementById(node.data.id.toString());
       return {
         data: node.data,
-        position: cyNode.position()
+        position: element.length ? element.position() : node.position
       };
     });
-    
-    const updatedData = {
-      nodes: updatedNodes,
+
+    const normalizedData = {
+      nodes: updatedNodes.map(node => ({
+        ...node,
+        position: {
+          x: Number(node.position.x),
+          y: Number(node.position.y)
+        }
+      })),
       edges: graphData.edges
     };
-    
-    onSave(updatedData);
+  
+    onSave(normalizedData);
   };
 
   return (
     <div className="h-full flex flex-col">
       <div className="control-panel">
-        <button 
-          className="btn btn-primary"
-          onClick={() => setEditMode(!editMode)}
-        >
+        <button onClick={() => setEditMode(!editMode)}>
           {editMode ? 'Exit Edit Mode' : 'Edit Graph'}
         </button>
         
         {editMode && (
           <>
-            <button 
-              className="btn btn-success"
-              onClick={openAddNodeModal}
-            >
+            <button onClick={() => setShowNodeModal(true)}>
               Add Node
             </button>
             <button 
-              className="btn btn-purple"
-              onClick={openAddEdgeModal}
-              disabled={!selectedNode || !selectedNode.isNode()}
+              onClick={() => setShowEdgeModal(true)}
+              disabled={!selectedElement?.isNode()}
             >
               Add Edge
             </button>
             <button 
-              className="btn btn-danger"
               onClick={removeSelected}
-              disabled={!selectedNode}
+              disabled={!selectedElement}
             >
               Remove Selected
             </button>
-            <button 
-              className="btn btn-warning"
-              onClick={handleSave}
-            >
+            <button onClick={handleSave}>
               Save Changes
             </button>
           </>
         )}
       </div>
       
-      <div className="flex-1 graph-container" ref={containerRef}>
-        {/* Cytoscape will render here */}
-      </div>
+      <div className="flex-1 graph-container" ref={containerRef} />
 
-      {/* Add Node Modal */}
+      {/* Node Creation Modal */}
       {showNodeModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-header">
-              <h3 className="modal-title">Add New Microservice</h3>
-              <button 
-                className="close-button"
-                onClick={() => setShowNodeModal(false)}
-              >
-                &times;
-              </button>
-            </div>
+            <h3>Add New Microservice</h3>
             <div className="form-group">
-              <label className="form-label">Service Name</label>
+              <label>Service Name</label>
               <input
-                type="text"
-                className="form-control"
-                value={newNodeName}
-                onChange={(e) => setNewNodeName(e.target.value)}
-                placeholder="Enter service name"
+                value={newNodeData.name}
+                onChange={e => setNewNodeData({ ...newNodeData, name: e.target.value })}
+                placeholder="Service name"
               />
             </div>
-            <div className="modal-footer">
-              <button 
-                className="btn cancel-btn"
-                onClick={() => setShowNodeModal(false)}
+            <div className="form-group">
+              <label>Endpoint URL</label>
+              <input
+                value={newNodeData.endpoint}
+                onChange={e => setNewNodeData({ ...newNodeData, endpoint: e.target.value })}
+                placeholder="http://service:port"
+              />
+            </div>
+            <div className="form-group">
+              <label>Service Type</label>
+              <select
+                value={newNodeData.service_type}
+                onChange={e => setNewNodeData({ ...newNodeData, service_type: e.target.value })}
               >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-success"
-                onClick={addNode}
-              >
-                Add Service
-              </button>
+                <option value="microservice">Microservice</option>
+                <option value="gateway">Gateway</option>
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button onClick={() => setShowNodeModal(false)}>Cancel</button>
+              <button onClick={addNode}>Add Service</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Edge Modal */}
+      {/* Edge Creation Modal */}
       {showEdgeModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-header">
-              <h3 className="modal-title">Add New Connection</h3>
-              <button 
-                className="close-button"
-                onClick={() => setShowEdgeModal(false)}
-              >
-                &times;
-              </button>
-            </div>
+            <h3>Create Connection</h3>
             <div className="form-group">
-              <label className="form-label">From Service</label>
-              <input
-                type="text"
-                className="form-control"
-                value={edgeSource ? graphData.nodes.find(n => n.data.id === edgeSource)?.data.label || edgeSource : ''}
-                disabled
+              <label>Source Service</label>
+              <input 
+                value={graphData.nodes.find(n => n.data.id === edgeData.source)?.data.name || ''}
+                disabled 
               />
             </div>
             <div className="form-group">
-              <label className="form-label">To Service</label>
-              <div className="radio-group">
-                {graphData.nodes.filter(node => node.data.id !== edgeSource).map((node) => (
-                  <div key={node.data.id} className="radio-option">
-                    <input
-                      type="radio"
-                      id={`node-${node.data.id}`}
-                      name="targetNode"
-                      value={node.data.id}
-                      checked={edgeTarget === node.data.id}
-                      onChange={() => setEdgeTarget(node.data.id)}
-                    />
-                    <label htmlFor={`node-${node.data.id}`}>{node.data.label}</label>
-                  </div>
-                ))}
-              </div>
+              <label>Target Service</label>
+              <select
+                value={edgeData.target}
+                onChange={e => setEdgeData({ ...edgeData, target: Number(e.target.value) })}
+              >
+                <option value={0}>Select target</option>
+                {graphData.nodes
+                  .filter(n => n.data.id !== edgeData.source)
+                  .map(node => (
+                    <option key={node.data.id} value={node.data.id}>
+                      {node.data.name}
+                    </option>
+                  ))}
+              </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Connection Label</label>
+              <label>Connection Label</label>
               <input
-                type="text"
-                className="form-control"
-                value={edgeLabel}
-                onChange={(e) => setEdgeLabel(e.target.value)}
-                placeholder="e.g., calls, authenticates, processes"
+                value={edgeData.label}
+                onChange={e => setEdgeData({ ...edgeData, label: e.target.value })}
+                placeholder="Connection label"
               />
             </div>
-            <div className="modal-footer">
-              <button 
-                className="btn cancel-btn"
-                onClick={() => setShowEdgeModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-success"
-                onClick={addEdge}
-                disabled={!edgeTarget}
-              >
-                Add Connection
+            <div className="modal-actions">
+              <button onClick={() => setShowEdgeModal(false)}>Cancel</button>
+              <button onClick={addEdge} disabled={!edgeData.target}>
+                Create Connection
               </button>
             </div>
           </div>

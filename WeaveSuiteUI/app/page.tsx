@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import Graph from './components/Graph';
 
-interface GraphNode {
+interface MicroserviceNode {
   data: {
-    id: string;
-    label: string;
-    serviceType: string;
+    id: number;
+    name: string;
+    namespace: string;
+    endpoint: string;
+    service_type: string;
   };
   position: {
     x: number;
@@ -15,18 +17,18 @@ interface GraphNode {
   };
 }
 
-interface GraphEdge {
+interface ServiceLink {
   data: {
-    id: string;
-    source: string;
-    target: string;
+    id: number;
+    source: number;
+    target: number;
     label: string;
   };
 }
 
 interface GraphData {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
+  nodes: MicroserviceNode[];
+  edges: ServiceLink[];
 }
 
 export default function Home() {
@@ -58,7 +60,17 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify({
+          nodes: updatedData.nodes.map(node => ({
+            ...node,
+            // Convert position floats to numbers if needed
+            position: { 
+              x: Number(node.position.x), 
+              y: Number(node.position.y) 
+            }
+          })),
+          edges: updatedData.edges
+        }),
       });
       
       if (response.ok) {
