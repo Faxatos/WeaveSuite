@@ -7,6 +7,7 @@ interface SystemTest {
   id: string;
   name: string;
   status: 'passed' | 'failed' | 'pending';
+  code: string;
   endpoint: {
     path: string;
     method: string;
@@ -15,6 +16,7 @@ interface SystemTest {
   lastRun: string;
   duration: number;
   errorMessage?: string;
+  servicesVisited?: string[];
 }
 
 interface TestItemProps {
@@ -35,61 +37,45 @@ export default function TestItem({ test }: TestItemProps) {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  // Format the endpoint path with params
   const getFormattedEndpoint = () => {
     let formattedPath = test.endpoint.path;
-    
     if (test.endpoint.params) {
-      // Replace path parameters
       Object.entries(test.endpoint.params).forEach(([key, value]) => {
         if (formattedPath.includes(`:${key}`)) {
           formattedPath = formattedPath.replace(`:${key}`, value);
         }
       });
-      
-      // Add query parameters if method is GET
       if (test.endpoint.method === 'GET') {
         const queryParams = Object.entries(test.endpoint.params)
           .filter(([key]) => !formattedPath.includes(`:${key}`))
           .map(([key, value], index) => `${index === 0 ? '?' : '&'}${key}=${value}`)
           .join('');
-        
         formattedPath += queryParams;
       }
     }
-    
     return formattedPath;
   };
 
   const getStatusIcon = () => {
     switch (test.status) {
-      case 'passed':
-        return <CheckCircle className="text-green-500" size={20} />;
-      case 'failed':
-        return <XCircle className="text-red-500" size={20} />;
-      case 'pending':
-        return <Clock className="text-yellow-500" size={20} />;
-      default:
-        return null;
+      case 'passed': return <CheckCircle className="text-green-500" size={20} />;
+      case 'failed': return <XCircle className="text-red-500" size={20} />;
+      case 'pending': return <Clock className="text-yellow-500" size={20} />;
     }
   };
 
   const getStatusClass = () => {
     switch (test.status) {
-      case 'passed':
-        return 'bg-green-100 text-green-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'passed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
     <div className="mb-4 bg-white rounded-lg shadow-md overflow-hidden">
-      <div 
+      <div
         className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -107,7 +93,7 @@ export default function TestItem({ test }: TestItemProps) {
           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </div>
       </div>
-      
+
       {isExpanded && (
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <div className="grid grid-cols-2 gap-4">
@@ -126,12 +112,12 @@ export default function TestItem({ test }: TestItemProps) {
                 <code className="text-sm">{getFormattedEndpoint()}</code>
               </div>
             </div>
-            
+
             <div>
               <p className="text-sm font-medium text-gray-500">Last Run</p>
               <p className="mt-1 text-sm">{formatDate(test.lastRun)}</p>
             </div>
-            
+
             {test.errorMessage && (
               <div className="col-span-2">
                 <p className="text-sm font-medium text-gray-500">Error Message</p>
@@ -140,7 +126,7 @@ export default function TestItem({ test }: TestItemProps) {
                 </div>
               </div>
             )}
-            
+
             {test.endpoint.params && Object.keys(test.endpoint.params).length > 0 && (
               <div className="col-span-2">
                 <p className="text-sm font-medium text-gray-500">Parameters</p>
@@ -154,6 +140,28 @@ export default function TestItem({ test }: TestItemProps) {
                 </div>
               </div>
             )}
+
+            {/* New: Services Visited */}
+            {test.servicesVisited && test.servicesVisited.length > 0 && (
+              <div className="col-span-2">
+                <p className="text-sm font-medium text-gray-500">Services Visited</p>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {test.servicesVisited.map(s => (
+                    <span key={s} className="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* New: Test Code */}
+            <div className="col-span-2">
+              <p className="text-sm font-medium text-gray-500">Test Code</p>
+              <pre className="mt-1 p-2 bg-gray-800 text-gray-100 rounded text-xs overflow-x-auto">
+                {test.code}
+              </pre>
+            </div>
           </div>
         </div>
       )}

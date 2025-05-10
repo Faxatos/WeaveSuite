@@ -7,6 +7,7 @@ export interface SystemTest {
     id: string;
     name: string;
     status: 'passed' | 'failed' | 'pending';
+    code: string;
     endpoint: {
         path: string;
         method: string;
@@ -15,6 +16,7 @@ export interface SystemTest {
     lastRun: string;
     duration: number; // in milliseconds
     errorMessage?: string;
+    servicesVisited: string[];
 }
 
 export default function TestsPage() {
@@ -25,8 +27,10 @@ export default function TestsPage() {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const testsData = await fetch('/api/tests');
-        const data = await testsData.json();
+        const res = await fetch('/api/tests');
+        const raw: any[] = await res.json();
+        // convert numeric ids to string for TestItem compatibility
+        const data: SystemTest[] = raw.map(t => ({ ...t, id: String(t.id) }));
         setTests(data);
       } catch (error) {
         console.error('Error fetching tests data:', error);
