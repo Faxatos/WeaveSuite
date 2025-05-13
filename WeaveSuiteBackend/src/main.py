@@ -35,6 +35,12 @@ async def trigger_test_generation(background_tasks: BackgroundTasks, db: Session
     )
     return {"message": "Test generation process started"}
 
+@app.get("/api/graph")
+async def get_service_map(db: Session = Depends(get_db)):
+    """Get all microservices and their links"""
+    service_map = DiscoveryService(db).get_graph()
+    return service_map
+
 @app.get("/api/system-tests")
 async def get_system_tests(db: Session = Depends(get_db)):
     """Get all system tests in the requested format"""

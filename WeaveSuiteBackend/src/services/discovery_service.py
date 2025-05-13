@@ -2,7 +2,10 @@ from kubernetes import client, config
 from sqlalchemy.orm import Session
 from sqlalchemy import exc
 import logging
-from src.db.models import Microservice
+
+from typing import Dict, List, Any
+
+from src.db.models import Microservice, Link
 
 class DiscoveryService:
     def __init__(self, db: Session):
@@ -58,4 +61,53 @@ class DiscoveryService:
         except Exception as e:
             logging.error(f"Discovery failed: {str(e)}")
             self.db.rollback()
+            raise
+
+    def get_graph(self) -> Dict[str, Any]:
+        """Get all microservices and their links"""
+        try:
+            # Fetch all microservices
+            microservices = self.db.query(Microservice).all()
+            
+            # Fetch all links
+            links = self.db.query(Link).all()
+            
+            # Format microservices for the response
+            nodes = []
+            for ms in microservices:
+                node = {
+                    "data": {
+                        "id": ms.id,
+                        "name": ms.name,
+                        "namespace": ms.namespace,
+                        "endpoint": ms.endpoint,
+                        "service_type": ms.service_type
+                    },
+                    "position": {
+                        "x": ms.x,
+                        "y": ms.y
+                    }
+                }
+                nodes.append(node)
+                
+            # Format links for the response
+            edges = []
+            for link in links:
+                edge = {
+                    "data": {
+                        "id": link.id,
+                        "source": link.source_id,
+                        "target": link.target_id,
+                        "label": link.label or ""
+                    }
+                }
+                edges.append(edge)
+                
+            return {
+                "nodes": nodes,
+                "edges": edges
+            }
+            
+        except Exception as e:
+            logging.error(f"Failed to get service map: {str(e)}")
             raise
