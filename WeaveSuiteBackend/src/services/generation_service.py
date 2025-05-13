@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from typing import List, Dict, Any
 
@@ -57,6 +58,124 @@ class GenerationService:
         except Exception as e:
             logging.error(f"Failed to generate tests: {str(e)}")
             return {"status": "error", "message": f"Failed to generate tests: {str(e)}"}
+        
+    def get_system_tests(self) -> List[Dict[str, Any]]:
+        """Fetch all system tests from the database in the requested format"""
+        try:
+            tests = self.db.query(Test).all()
+            
+            result = []
+            for test in tests:
+                # Extract endpoint info from test name and code
+                endpoint_info = self._extract_endpoint_info(test.name, test.code)
+                
+                # Parse services visited from JSON string if available
+                services_visited = []
+                if test.services_visited:
+                    try:
+                        services_visited = json.loads(test.services_visited)
+                    except json.JSONDecodeError:
+                        logging.warning(f"Invalid JSON in services_visited for test {test.id}")
+                
+                test_data = {
+                    "id": test.id,
+                    "name": self._get_friendly_test_name(test.name),
+                    "status": test.status or "pending",
+                    "code": test.code,
+                    "endpoint": endpoint_info,
+                    "lastRun": test.last_execution.isoformat() if test.last_execution else None,
+                    "duration": test.execution_time,
+                    "errorMessage": test.error_message,
+                    "servicesVisited": services_visited
+                }
+                
+                result.append(test_data)
+            
+            return result
+            
+        except Exception as e:
+            logging.error(f"Failed to fetch system tests: {str(e)}")
+            return []
+    
+    def _get_friendly_test_name(self, test_name: str) -> str:
+        """Convert test_user_service_get_profile to 'User Profile'"""
+        # Remove test_ prefix
+        if test_name.startswith("test_"):
+            name = test_name[5:]
+        else:
+            name = test_name
+            
+        # Extract meaningful parts and capitalize
+        parts = name.split("_")
+        # Remove method names that might appear at the end
+        method_names = ["get", "post", "put", "delete", "patch"]
+        filtered_parts = [p for p in parts if p not in method_names and p != "service"]
+        
+        # Join words and capitalize each
+        friendly_name = " ".join(word.capitalize() for word in filtered_parts)
+        return friendly_name
+    
+    def _extract_endpoint_info(self, test_name: str, test_code: str) -> Dict[str, Any]:
+        """Extract endpoint information from test name and code"""
+        endpoint = {
+            "path": "",
+            "method": "",
+            "params": {}
+        }
+        
+        # Try to extract method from test name
+        method_map = {
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "delete": "DELETE",
+            "patch": "PATCH"
+        }
+        
+        for method_key in method_map:
+            if method_key in test_name:
+                endpoint["method"] = method_map[method_key]
+                break
+        
+        # Extract path and params from code
+        if test_code:
+            # Look for URL patterns in the code
+            url_pattern = re.search(r"(client\.(get|post|put|delete|patch)|request\.(get|post|put|delete|patch))\(['\"]([^'\"]+)['\"]", test_code)
+            if url_pattern:
+                # Extract method if we didn't get it from name
+                if not endpoint["method"]:
+                    method = url_pattern.group(2)
+                    endpoint["method"] = method.upper()
+                
+                # Extract path
+                path = url_pattern.group(4)
+                endpoint["path"] = path
+                
+                # Extract query parameters if present
+                if "?" in path:
+                    path_part, query_part = path.split("?", 1)
+                    endpoint["path"] = path_part
+                    
+                    # Parse query parameters
+                    param_pairs = query_part.split("&")
+                    for pair in param_pairs:
+                        if "=" in pair:
+                            key, value = pair.split("=", 1)
+                            endpoint["params"][key] = value
+            
+            # Look for request parameters in the code (for POST/PUT)
+            param_pattern = re.search(r"send\(([^)]+)\)", test_code)
+            if param_pattern and (endpoint["method"] == "POST" or endpoint["method"] == "PUT"):
+                # Simplified parameter extraction - in real code would need more robust parsing
+                param_body = param_pattern.group(1)
+                # Add dummy params for demonstration
+                if param_body and "{" in param_body:
+                    # Just identify there are params without parsing the full structure
+                    key_pattern = re.findall(r"['\"]([\w]+)['\"]:", param_body)
+                    for key in key_pattern:
+                        endpoint["params"][key] = "..." # Placeholder value
+        
+        return endpoint
     
     def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec], include_layout: bool) -> Dict[str, Any]:
         """Generate test code using OpenAI API"""
@@ -163,6 +282,9 @@ class GenerationService:
             # Create the complete test function
             complete_test = f"def {test_name}(client):{test_body}"
             
+            # Extract endpoint path and method info for the test
+            endpoint_info = self._extract_endpoint_info(test_name, complete_test)
+            
             # Store in the database
             try:
                 # Check if test already exists
@@ -173,11 +295,16 @@ class GenerationService:
                     existing_test.code = complete_test
                     existing_test.spec_id = spec_id
                 else:
-                    # Create new test
+                    # Create new test with default values matching the requested format
                     new_test = Test(
                         name=test_name,
                         code=complete_test,
-                        spec_id=spec_id
+                        spec_id=spec_id,
+                        status="pending",
+                        last_execution=None,
+                        execution_time=0,
+                        error_message=None,
+                        services_visited=json.dumps([])  # Empty array as JSON string
                     )
                     self.db.add(new_test)
                 

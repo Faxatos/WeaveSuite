@@ -2,6 +2,7 @@ from fastapi import FastAPI, BackgroundTasks, Depends
 from src.db.database import get_db
 from src.services.discovery_service import DiscoveryService
 from src.services.spec_service import SpecService
+from src.services.generation_service import GenerationService
 
 app = FastAPI()
 
@@ -33,3 +34,9 @@ async def trigger_test_generation(background_tasks: BackgroundTasks, db: Session
         lambda: GenerationService(db).generate_and_store_tests()
     )
     return {"message": "Test generation process started"}
+
+@app.get("/api/system-tests")
+async def get_system_tests(db: Session = Depends(get_db)):
+    """Get all system tests in the requested format"""
+    tests = GenerationService(db).get_system_tests()
+    return {"tests": tests}
