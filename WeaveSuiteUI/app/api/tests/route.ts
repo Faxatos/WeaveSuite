@@ -1,82 +1,115 @@
+import axios from 'axios';
 import { NextResponse } from 'next/server';
 
-// Return static mock test data shaped for graph visualization
-export async function GET() {
-  const mockGraphData = [
-    {
-      id: 1,
-      name: 'User Authentication',
-      status: 'passed',
-      code: "// Test code for login flow\nawait request.post('/api/auth/login').send({ username: 'user', password: 'pass' }).expect(200);",
-      endpoint: {
-        path: '/auth/login',
-        method: 'POST',
-      },
-      lastRun: '2025-04-15T14:32:00Z',
-      duration: 242,
-      errorMessage: undefined,
-      servicesVisited: ['auth-service'],
-    },
-    {
-      id: 2,
-      name: 'Product Listing',
-      status: 'passed',
-      code: "// Test code for product list\nconst res = await request.get('/api/products?limit=10&category=electronics').expect(200);\nexpect(res.body.length).toBe(10);",
-      endpoint: {
-        path: '/api/products',
-        method: 'GET',
-        params: { limit: '10', category: 'electronics' },
-      },
-      lastRun: '2025-04-15T14:33:10Z',
-      duration: 156,
-      errorMessage: undefined,
-      servicesVisited: ['product-service', 'cache-service'],
-    },
-    {
-      id: 3,
-      name: 'Order Creation',
-      status: 'failed',
-      code: "// Test code for order creation\nawait request.post('/api/orders/create').send({ userId: 'user_123', items: [...] }).expect(201);",
-      endpoint: {
-        path: '/api/orders/create',
-        method: 'POST',
-      },
-      lastRun: '2025-04-15T14:34:22Z',
-      duration: 510,
-      errorMessage: 'Timeout waiting for payment processing',
-      servicesVisited: ['order-service', 'payment-service'],
-    },
-    {
-      id: 4,
-      name: 'User Profile Update',
-      status: 'pending',
-      code: "// Test code for profile update\n// Not yet implemented",
-      endpoint: {
-        path: '/api/users/:userId',
-        method: 'PUT',
-        params: { userId: 'user_12345' },
-      },
-      lastRun: '2025-04-15T14:35:00Z',
-      duration: 0,
-      errorMessage: undefined,
-      servicesVisited: [],
-    },
-    {
-      id: 5,
-      name: 'Product Search',
-      status: 'passed',
-      code: "// Test code for search\nconst res = await request.get('/api/search?query=smartphone&sort=price_asc').expect(200);\nexpect(res.body.results).toBeDefined();",
-      endpoint: {
-        path: '/api/search',
-        method: 'GET',
-        params: { query: 'smartphone', sort: 'price_asc' },
-      },
-      lastRun: '2025-04-15T14:36:15Z',
-      duration: 189,
-      errorMessage: undefined,
-      servicesVisited: ['search-service'],
-    },
-  ];
+// Define the API endpoint for the backend Python service
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
-  return NextResponse.json(mockGraphData);
+// Define interfaces for the service graph data
+interface NodeData {
+  id: number;
+  name: string;
+  namespace: string;
+  endpoint: string;
+  service_type: string;
+}
+
+interface Node {
+  data: NodeData;
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+interface EdgeData {
+  id: number;
+  source: number;
+  target: number;
+  label: string;
+}
+
+interface Edge {
+  data: EdgeData;
+}
+
+interface ServiceGraph {
+  nodes: Node[];
+  edges: Edge[];
+}
+
+// Define a response structure to wrap data or error
+interface ApiResponse<T> {
+  data: T | null;
+  error?: string;
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get('action') || 'getGraph';
+
+  let response: ApiResponse<any> = { data: null };
+  let status = 200;
+
+  try {
+    if (action === 'getGraph') {
+      const graphData = await fetchServiceGraph();
+      response.data = graphData;
+    } else if (action === 'updateSpecs') {
+      const updateResult = await triggerSpecUpdate();
+      response.data = updateResult;
+    } else {
+      status = 400;
+      response.error = 'Invalid action parameter';
+    }
+  } catch (error) {
+    console.error('Error in graph API:', error);
+    
+    // Handle specific error types differently
+    if (error instanceof Error) {
+      if (error.message.includes('Service map is empty')) {
+        // This is a 404 from the backend - pass it through
+        status = 404;
+        response.error = error.message;
+      } else {
+        // Other errors - internal server error
+        status = 500;
+        response.error = error.message || 'Server error occurred';
+      }
+    } else {
+      // Unknown error type
+      status = 500;
+      response.error = 'Server error occurred';
+    }
+  }
+
+  return NextResponse.json(response, { status });
+}
+
+// Fetch the service graph from the Python backend
+async function fetchServiceGraph(): Promise<ServiceGraph | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/graph`);
+    return response.data as ServiceGraph;
+  } catch (error) {
+    console.error('Error fetching service graph from backend:', error);
+    
+    // Check if this is a 404 error (service map is empty)
+    if (axios.isAxiosError(error as any) && (error as any).response?.status === 404) {
+      throw new Error('Service map is empty. No microservices or links found.');
+    }
+    
+    // For other errors
+    throw new Error('Failed to connect to service discovery backend.');
+  }
+}
+
+// Trigger the spec update process on the backend
+async function triggerSpecUpdate() {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/update-specs`);
+    return response.data;
+  } catch (error) {
+    console.error('Error triggering spec update:', error);
+    throw new Error('Failed to trigger service discovery update.');
+  }
 }
