@@ -1,9 +1,12 @@
-from fastapi import FastAPI, BackgroundTasks, Depends
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+from typing import Dict, Any, List
+from sqlalchemy.orm import Session
 from src.db.database import get_db
 from src.services.discovery_service import DiscoveryService
 from src.services.spec_service import SpecService
 from src.services.generation_service import GenerationService
-
+import logging
 app = FastAPI()
 
 @app.on_event("startup")
@@ -38,8 +41,26 @@ async def trigger_test_generation(background_tasks: BackgroundTasks, db: Session
 @app.get("/api/graph")
 async def get_service_map(db: Session = Depends(get_db)):
     """Get all microservices and their links"""
-    service_map = DiscoveryService(db).get_graph()
-    return service_map
+    try:
+        service_map = DiscoveryService(db).get_graph()
+        
+        # Check if the service map is empty (no nodes or no edges)
+        if not service_map.get("nodes") or not service_map.get("edges"):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Service map is empty. No microservices or links found."
+            )
+        
+        return service_map
+    except HTTPException:
+        # Re-raise HTTP exceptions (like our 404)
+        raise
+    except Exception as e:
+        logging.error(f"Error retrieving service map: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve service map: {str(e)}"
+        )
 
 @app.get("/api/system-tests")
 async def get_system_tests(db: Session = Depends(get_db)):
