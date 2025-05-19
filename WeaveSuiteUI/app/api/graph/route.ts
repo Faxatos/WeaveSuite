@@ -1,145 +1,115 @@
-export async function GET() {
-  // Mock data aligned with database schema
-  const mockGraphData = {
-    nodes: [
-      { 
-        data: { 
-          id: 1,
-          name: 'api-gateway',
-          namespace: 'default',
-          endpoint: 'http://api-gateway:8080',
-          service_type: 'gateway'
-        },
-        position: { x: 300, y: 100 }
-      },
-      { 
-        data: { 
-          id: 2,
-          name: 'auth-service',
-          namespace: 'default',
-          endpoint: 'http://auth-service:8080',
-          service_type: 'microservice'
-        },
-        position: { x: 150, y: 200 }
-      },
-      { 
-        data: { 
-          id: 3,
-          name: 'user-service',
-          namespace: 'default',
-          endpoint: 'http://user-service:8080',
-          service_type: 'microservice'
-        },
-        position: { x: 300, y: 300 }
-      },
-      { 
-        data: { 
-          id: 4,
-          name: 'product-service',
-          namespace: 'default',
-          endpoint: 'http://product-service:8080',
-          service_type: 'microservice'
-        },
-        position: { x: 450, y: 200 }
-      },
-      { 
-        data: { 
-          id: 5,
-          name: 'order-service',
-          namespace: 'default',
-          endpoint: 'http://order-service:8080',
-          service_type: 'microservice'
-        },
-        position: { x: 500, y: 300 }
-      },
-      { 
-        data: { 
-          id: 6,
-          name: 'notification-service',
-          namespace: 'default',
-          endpoint: 'http://notification:8080',
-          service_type: 'microservice'
-        },
-        position: { x: 200, y: 400 }
-      },
-      { 
-        data: { 
-          id: 7,
-          name: 'payment-service',
-          namespace: 'default',
-          endpoint: 'http://payment:8080',
-          service_type: 'microservice'
-        },
-        position: { x: 400, y: 400 }
-      }
-    ],
-    edges: [
-      { 
-        data: { 
-          id: 1,
-          source: 1,
-          target: 2,
-          label: 'authenticates'
-        } 
-      },
-      { 
-        data: { 
-          id: 2,
-          source: 1,
-          target: 3,
-          label: 'routes'
-        } 
-      },
-      { 
-        data: { 
-          id: 3,
-          source: 1,
-          target: 4,
-          label: 'routes'
-        } 
-      },
-      { 
-        data: { 
-          id: 4,
-          source: 1,
-          target: 5,
-          label: 'routes'
-        } 
-      },
-      { 
-        data: { 
-          id: 5,
-          source: 5,
-          target: 7,
-          label: 'processes payment'
-        } 
-      },
-      { 
-        data: { 
-          id: 6,
-          source: 5,
-          target: 6,
-          label: 'sends updates'
-        } 
-      },
-      { 
-        data: { 
-          id: 7,
-          source: 3,
-          target: 6,
-          label: 'sends notifications'
-        } 
-      },
-      { 
-        data: { 
-          id: 8,
-          source: 4,
-          target: 5,
-          label: 'provides details'
-        } 
-      }
-    ]
-  };
+import axios from 'axios';
+import { NextResponse } from 'next/server';
 
-  return Response.json(mockGraphData);
+// Define the API endpoint for the backend Python service
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+
+// Define interfaces for the service graph data
+interface NodeData {
+  id: number;
+  name: string;
+  namespace: string;
+  endpoint: string;
+  service_type: string;
+}
+
+interface Node {
+  data: NodeData;
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+interface EdgeData {
+  id: number;
+  source: number;
+  target: number;
+  label: string;
+}
+
+interface Edge {
+  data: EdgeData;
+}
+
+interface ServiceGraph {
+  nodes: Node[];
+  edges: Edge[];
+}
+
+// Define a response structure to wrap data or error
+interface ApiResponse<T> {
+  data: T | null;
+  error?: string;
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get('action') || 'getGraph';
+
+  let response: ApiResponse<any> = { data: null };
+  let status = 200;
+
+  try {
+    if (action === 'getGraph') {
+      const graphData = await fetchServiceGraph();
+      response.data = graphData;
+    } else if (action === 'updateSpecs') {
+      const updateResult = await triggerSpecUpdate();
+      response.data = updateResult;
+    } else {
+      status = 400;
+      response.error = 'Invalid action parameter';
+    }
+  } catch (error) {
+    console.error('Error in graph API:', error);
+    
+    // Handle specific error types differently
+    if (error instanceof Error) {
+      if (error.message.includes('Service map is empty')) {
+        // This is a 404 from the backend - pass it through
+        status = 404;
+        response.error = error.message;
+      } else {
+        // Other errors - internal server error
+        status = 500;
+        response.error = error.message || 'Server error occurred';
+      }
+    } else {
+      // Unknown error type
+      status = 500;
+      response.error = 'Server error occurred';
+    }
+  }
+
+  return NextResponse.json(response, { status });
+}
+
+// Fetch the service graph from the Python backend
+async function fetchServiceGraph(): Promise<ServiceGraph | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/graph`);
+    return response.data as ServiceGraph;
+  } catch (error) {
+    console.error('Error fetching service graph from backend:', error);
+    
+    // Check if this is a 404 error (service map is empty)
+    if (axios.isAxiosError(error as any) && (error as any).response?.status === 404) {
+      throw new Error('Service map is empty. No microservices or links found.');
+    }
+    
+    // For other errors
+    throw new Error('Failed to connect to service discovery backend.');
+  }
+}
+
+// Trigger the spec update process on the backend
+async function triggerSpecUpdate() {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/update-specs`);
+    return response.data;
+  } catch (error) {
+    console.error('Error triggering spec update:', error);
+    throw new Error('Failed to trigger service discovery update.');
+  }
 }
