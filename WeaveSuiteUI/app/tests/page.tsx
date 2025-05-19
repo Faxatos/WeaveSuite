@@ -4,43 +4,78 @@ import { useEffect, useState } from 'react';
 import TestItem from '@/app/components/TestItem';
 
 export interface SystemTest {
-    id: string;
-    name: string;
-    status: 'passed' | 'failed' | 'pending';
-    code: string;
-    endpoint: {
-        path: string;
-        method: string;
-        params?: Record<string, string>;
-    };
-    lastRun: string;
-    duration: number; // in milliseconds
-    errorMessage?: string;
-    servicesVisited: string[];
+  id: string;
+  name: string;
+  status: 'passed' | 'failed' | 'pending';
+  code: string;
+  endpoint: {
+    path: string;
+    method: string;
+    params?: Record<string, string>;
+  };
+  lastRun: string;
+  duration: number; // in milliseconds
+  errorMessage?: string;
+  servicesVisited: string[];
 }
 
 export default function TestsPage() {
   const [tests, setTests] = useState<SystemTest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [filter, setFilter] = useState<'all' | 'passed' | 'failed' | 'pending'>('all');
 
   useEffect(() => {
     const fetchTests = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        
         const res = await fetch('/api/tests');
-        const raw: any[] = await res.json();
-        // convert numeric ids to string for TestItem compatibility
-        const data: SystemTest[] = raw.map(t => ({ ...t, id: String(t.id) }));
-        setTests(data);
+        
+        if (!res.ok) {
+          // Handle specific error cases
+          const errorData = await res.json();
+          
+          if (res.status === 404 && errorData.error?.includes('No system tests available')) {
+            setError('No tests available yet. Retrying...');
+            
+            // Wait a second and retry
+            setTimeout(() => {
+              setRetryCount(prev => prev + 1);
+            }, 1000);
+            return;
+          }
+          
+          throw new Error(errorData.error || 'Failed to fetch tests');
+        }
+        
+        const data = await res.json();
+        let testsData: SystemTest[];
+        
+        // Check if the data is wrapped in a 'data' property (from the API response)
+        if (data.data) {
+          testsData = data.data;
+        } else {
+          testsData = data;
+        }
+        
+        // Convert numeric ids to string for TestItem compatibility
+        testsData = testsData.map(t => ({ ...t, id: String(t.id) }));
+        
+        setTests(testsData);
+        setError(null);
       } catch (error) {
         console.error('Error fetching tests data:', error);
+        setError('Failed to load tests data. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchTests();
-  }, []);
+  }, [retryCount]);
 
   const filteredTests = tests.filter(test => {
     if (filter === 'all') return true;
@@ -79,10 +114,31 @@ export default function TestsPage() {
     );
   };
 
+  const handleManualRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-lg">Loading tests data...</div>
+      <div className="flex items-center justify-center min-h-[60vh] flex-col">
+        <div className="text-lg mb-4">Loading tests data...</div>
+        {error && (
+          <div className="text-yellow-600 text-sm">{error}</div>
+        )}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] flex-col">
+        <div className="text-red-600 mb-4">{error}</div>
+        <button 
+          onClick={handleManualRetry}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }
