@@ -48,7 +48,7 @@ async def get_service_map(db: Session = Depends(get_db)):
         if not service_map.get("nodes") or not service_map.get("edges"):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Service map is empty. No microservices or links found."
+                detail="Service map is empty"
             )
         
         return service_map
@@ -65,5 +65,23 @@ async def get_service_map(db: Session = Depends(get_db)):
 @app.get("/api/system-tests")
 async def get_system_tests(db: Session = Depends(get_db)):
     """Get all system tests in the requested format"""
-    tests = GenerationService(db).get_system_tests()
-    return {"tests": tests}
+    try:
+        tests = GenerationService(db).get_system_tests()
+        
+        # Check if tests list is empty
+        if not tests:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No system tests available"
+            )
+        
+        return {"tests": tests}
+    except HTTPException:
+        # Re-raise HTTP exceptions (like our 404)
+        raise
+    except Exception as e:
+        logging.error(f"Error retrieving system tests: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve system tests: {str(e)}"
+        )
