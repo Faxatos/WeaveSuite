@@ -1,6 +1,9 @@
 import json
 import logging
 import os
+from dotenv import load_dotenv
+from pathlib import Path
+import sys
 import re
 from datetime import datetime
 from typing import List, Dict, Any
@@ -10,6 +13,12 @@ from sqlalchemy.orm import Session
 
 from db.models import OpenAPISpec, Test, Microservice, Link
 
+# Load environment variables from the .env file
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class GenerationService:
     def __init__(self, db: Session):

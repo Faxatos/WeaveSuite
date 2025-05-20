@@ -1,18 +1,11 @@
 FROM python:3.11-slim
 
+# Copy all files to app directory
+COPY . /app
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN pip install -r requirements.txt
 
-COPY . .
-
-#set environment variable for Python path
-ENV PYTHONPATH=/app
-
-#load .env file and run the commands in sequence
-CMD sh -c 'if [ -f .env ]; then export $(grep -v "^#" .env | xargs); fi && \
-           echo "Initializing database..." && \
-           python /app/src/db/database.py && \
-           echo "Starting application..." && \
-           python /app/src/launcher.py'
+# Run database initialization and then launch the FastAPI application with uvicorn
+CMD python src/db/database.py && uvicorn main:app --host 0.0.0.0 --port 8000
