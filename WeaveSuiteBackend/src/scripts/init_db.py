@@ -1,10 +1,12 @@
-import os
 from src.db.database import Base, engine
-from src.db.models import Microservice, OpenAPISpec, Test, ProxyModification
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
-    print("Database tables created")
+    try:
+        Base.metadata.create_all(bind=engine)  
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"ERROR creating database tables: {e}")
+        raise
 
 if __name__ == "__main__":
     init_db()

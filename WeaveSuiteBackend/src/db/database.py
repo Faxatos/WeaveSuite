@@ -26,8 +26,10 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+print("Declarative base created")
 
 def get_db():
+    print("get_db called - creating new database session")
     db = SessionLocal()
     try:
         yield db

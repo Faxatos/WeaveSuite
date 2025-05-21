@@ -15,6 +15,7 @@ class SpecService:
         services = self.db.query(Microservice).all()
         
         for service in services:
+            print(f"DEBUG: fetching from service: {service.name} (id={service.id}, endpoint={service.endpoint})")
             spec = None
             for path in ['openapi.json', 'swagger.json']:
                 try:

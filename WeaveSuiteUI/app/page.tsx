@@ -64,6 +64,7 @@ export default function Home() {
         }
         
         const data = await response.json();
+        console.log('Raw API response:', data);
         
         // Check if the data is wrapped in a data property
         const graphData = data.data ? data.data : data;

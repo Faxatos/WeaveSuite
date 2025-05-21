@@ -52,6 +52,7 @@ export default function TestsPage() {
         }
         
         const data = await res.json();
+        console.log('Raw API response:', data);
         let testsData: SystemTest[];
         
         // Check if the data is wrapped in a 'data' property (from the API response)
