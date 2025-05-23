@@ -2,7 +2,7 @@ import axios from 'axios';
 import { NextResponse } from 'next/server';
 
 // Define the API endpoint for the backend Python service
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://weavesuite-backend.default.svc.cluster.local:8000';
 
 // Define interfaces for the service graph data
 interface NodeData {
