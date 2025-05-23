@@ -2,18 +2,21 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+# Install pnpm globally
+RUN npm install -g pnpm node-gyp
 
-RUN npm install
+COPY pnpm-lock.yaml package.json ./
 
-#copy the rest of the application
+# Install all dependencies (including devDependencies)
+RUN pnpm install
+
 COPY . .
 
+# Expose the port for the Next.js development server
 EXPOSE 3000
 
-#set development environment
-ENV NODE_ENV=development
-ENV NEXT_TELEMETRY_DISABLED=1
+# Default environment variables for development
+ENV NODE_ENV development
+ENV AUTH_TRUST_HOST true
 
-#start the development server with hot reloading
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "dev"]
