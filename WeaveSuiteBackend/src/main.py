@@ -2,10 +2,10 @@ from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
-from src.db.database import get_db
-from src.services.discovery_service import DiscoveryService
-from src.services.spec_service import SpecService
-from src.services.generation_service import GenerationService
+from db.database import get_db
+from services.discovery_service import DiscoveryService
+from services.spec_service import SpecService
+from services.generation_service import GenerationService
 import logging
 app = FastAPI()
 

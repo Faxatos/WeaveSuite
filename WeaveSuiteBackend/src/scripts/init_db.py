@@ -1,4 +1,4 @@
-from src.db.database import Base, engine
+from db.database import Base, engine
 
 def init_db():
     try:

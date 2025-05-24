@@ -3,7 +3,7 @@ import requests
 from sqlalchemy.orm import Session
 import logging
 from urllib.parse import urljoin
-from src.db.models import OpenAPISpec, Microservice
+from db.models import OpenAPISpec, Microservice
 
 class SpecService:
     def __init__(self, db: Session):

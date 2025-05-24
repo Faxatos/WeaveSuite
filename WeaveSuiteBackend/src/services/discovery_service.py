@@ -5,7 +5,7 @@ import logging
 
 from typing import Dict, List, Any
 
-from src.db.models import Microservice, Link
+from db.models import Microservice, Link
 
 class DiscoveryService:
     def __init__(self, db: Session):

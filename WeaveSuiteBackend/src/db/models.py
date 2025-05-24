@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Float, DateTime, Integer, String, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from src.db.database import Base
+from db.database import Base
 
 class Microservice(Base):
     __tablename__ = "microservices"
