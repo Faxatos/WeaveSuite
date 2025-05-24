@@ -1,11 +1,21 @@
 FROM python:3.11-slim
 
-# Copy all files to app directory
-COPY . /app
-WORKDIR /app
+WORKDIR /app/src
 
-# Install dependencies
-RUN pip install -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Run database initialization and then launch the FastAPI application with uvicorn
-CMD python src/db/database.py && uvicorn main:app --host 0.0.0.0 --port 8000
+# Copy requirements first
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy source code
+COPY src/ /app/src/
+
+# Ensure Python can find your modules
+ENV PYTHONPATH=/app/src
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
