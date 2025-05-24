@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Float, DateTime, Integer, String, JSON, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Float, DateTime, Integer, String, JSON, ForeignKey, UniqueConstraint, JSON, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from db.database import Base
@@ -44,6 +44,7 @@ class ProxyModification(Base):
     config = Column(JSON)  
     spec_id = Column(Integer, ForeignKey("openapi_specs.id"))  # 1:N link
     spec = relationship("OpenAPISpec", back_populates="proxy_modifications")
+    test_failures = relationship("TestProxyFailure", back_populates="proxy_modification")
 
 class Test(Base):
     __tablename__ = "tests"
@@ -56,13 +57,17 @@ class Test(Base):
     status = Column(String, nullable=True)  # passed, failed, skipped, error
     execution_time = Column(Float, nullable=True)
     error_message = Column(String, nullable=True)
-    services_visited = Column(String, nullable=True)  # JSON array as string
+    services_visited = Column(JSON, nullable=True)  # JSON array as string
+    proxy_failures = relationship("TestProxyFailure", back_populates="test", cascade="all, delete-orphan", passive_deletes=True)
 
 class TestProxyFailure(Base):
     __tablename__ = "test_proxy_failures"
+    __table_args__ = (
+        Index('idx_test_proxy_failure', 'test_id', 'proxy_modification_id'),
+    )
     #composite primary key ensures uniqueness
-    test_id               = Column(Integer, ForeignKey("tests.id"), primary_key=True)
-    proxy_modification_id = Column(Integer, ForeignKey("proxy_modifications.id"), primary_key=True)
+    test_id               = Column(Integer, ForeignKey("tests.id", ondelete="CASCADE"), primary_key=True)
+    proxy_modification_id = Column(Integer, ForeignKey("proxy_modifications.id", ondelete="CASCADE"), primary_key=True)
     #back‑refs into Test and ProxyModification
     test               = relationship("Test", back_populates="proxy_failures")
     proxy_modification = relationship("ProxyModification", back_populates="test_failures")
