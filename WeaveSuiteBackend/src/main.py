@@ -6,11 +6,16 @@ from db.database import get_db
 from services.discovery_service import DiscoveryService
 from services.spec_service import SpecService
 from services.generation_service import GenerationService
+from scripts.init_db import init_db
 import logging
+
 app = FastAPI()
 
 @app.on_event("startup")
 async def startup_event():
+    # Initialize database first
+    init_db()
+    
     db = next(get_db())
     try:
         # Initial discovery on startup
