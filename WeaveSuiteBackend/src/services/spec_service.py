@@ -17,7 +17,7 @@ class SpecService:
         for service in services:
             logging.info(f"DEBUG: fetching from service: {service.name} (id={service.id}, endpoint={service.endpoint})")
             spec = None
-            for path in ['openapi.json', 'swagger.json',  'api-docs', 'api/docs', 'docs/json', 'v1/openapi.json', 'v2/openapi.json', 'api/v1/openapi.json', 'swagger/v1/swagger.json', 'swagger-ui/swagger.json']:
+            for path in ['v3/api-docs','openapi.json', 'swagger.json',  'api-docs', 'api/docs', 'docs/json', 'v1/openapi.json', 'v2/openapi.json', 'api/v1/openapi.json', 'swagger/v1/swagger.json', 'swagger-ui/swagger.json']:
                 try:
                     #construct URL using urljoin
                     base_url = f"http://{service.endpoint}"
