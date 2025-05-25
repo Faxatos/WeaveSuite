@@ -90,3 +90,7 @@ async def get_system_tests(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve system tests: {str(e)}"
         )
+    
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
