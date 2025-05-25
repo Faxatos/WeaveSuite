@@ -17,7 +17,7 @@ class DiscoveryService:
             config.load_incluster_config()
             k8s = client.CoreV1Api()
             services = k8s.list_service_for_all_namespaces().items
-            print(f"Found {len(services)} services in Kubernetes")
+            logging.debug(f"Found {len(services)} services in Kubernetes")
             
             existing_services = {
                 (ms.name, ms.namespace) 
@@ -30,8 +30,8 @@ class DiscoveryService:
                 name = service.metadata.name
                 namespace = service.metadata.namespace
                 labels = service.metadata.labels or {}
-                print(f"Processing service {name} in namespace {namespace}")
-                print(f"Service labels: {labels}")
+                logging.debug(f"Processing service {name} in namespace {namespace}")
+                logging.debug(f"Service labels: {labels}")
 
                 #ToDo: fix logic to understand if the service is a gateway or microservice
                 is_gateway = labels.get("gateway", "").lower() == "true"

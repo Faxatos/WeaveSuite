@@ -15,9 +15,9 @@ class SpecService:
         services = self.db.query(Microservice).all()
         
         for service in services:
-            print(f"DEBUG: fetching from service: {service.name} (id={service.id}, endpoint={service.endpoint})")
+            logging.info(f"DEBUG: fetching from service: {service.name} (id={service.id}, endpoint={service.endpoint})")
             spec = None
-            for path in ['openapi.json', 'swagger.json']:
+            for path in ['openapi.json', 'swagger.json',  'api-docs', 'api/docs', 'docs/json', 'v1/openapi.json', 'v2/openapi.json', 'api/v1/openapi.json', 'swagger/v1/swagger.json', 'swagger-ui/swagger.json']:
                 try:
                     #construct URL using urljoin
                     base_url = f"http://{service.endpoint}"
@@ -27,8 +27,10 @@ class SpecService:
                     if response.status_code == 200:
                         spec = response.json()
                         break  # Exit loop on first successful fetch
+                    else:
+                        logging.warning(f"Attempt failed for {service.name} at {full_url}, status code: {response.status_code}")
                 except Exception as e:
-                    logging.debug(f"Attempt failed for {service.name} at {path}: {str(e)}")
+                    logging.warning(f"Attempt failed for {service.name} at {path}: {str(e)}")
             
             if spec is not None:
                 self.store_spec(
@@ -37,7 +39,7 @@ class SpecService:
                 )
                 updated.append(service.name)
             else:
-                logging.warning(f"Failed to fetch spec for {service.name} from both endpoints")
+                logging.warning(f"Failed to fetch spec for {service.name} from both endpoints, with base {service.endpoint}")
         
         return {"updated": updated}
     

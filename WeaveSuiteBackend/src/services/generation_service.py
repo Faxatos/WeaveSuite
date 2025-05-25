@@ -62,7 +62,7 @@ class GenerationService:
                 links_created = self._store_links(response_data.get("links", []))
                 result.update({"positions_updated": positions_updated, "links_created": links_created})
 
-            print(f"Store result: {result}")
+            logging.debug(f"Store result: {result}")
             return result
             
         except Exception as e:
@@ -99,7 +99,7 @@ class GenerationService:
                     "servicesVisited": services_visited
                 }
 
-                print(f"test_data: {test_data}")
+                logging.debug(f"test_data: {test_data}")
                 result.append(test_data)
             
             return result
@@ -124,7 +124,7 @@ class GenerationService:
         
         # Join words and capitalize each
         friendly_name = " ".join(word.capitalize() for word in filtered_parts)
-        print(f"Friendly name result: {friendly_name}")
+        logging.debug(f"Friendly name result: {friendly_name}")
         return friendly_name
     
     def _extract_endpoint_info(self, test_name: str, test_code: str) -> Dict[str, Any]:
@@ -187,7 +187,7 @@ class GenerationService:
                     for key in key_pattern:
                         endpoint["params"][key] = "..." # Placeholder value
         
-        print(f"Final endpoint info: {endpoint}")
+        logging.debug(f"Final endpoint info: {endpoint}")
         return endpoint
     
     def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec], include_layout: bool) -> Dict[str, Any]:
@@ -209,10 +209,10 @@ class GenerationService:
                 "openapi_specs": {spec.id: spec.spec for spec in specs}
             }
 
-            print(f"Prompt intro: {intro}")
-            print(f"Payload keys: {list(payload.keys())}")
-            print(f"Microservices in payload: {len(payload['microservices'])}")
-            print(f"OpenAPI specs in payload: {len(payload['openapi_specs'])}")
+            logging.info(f"Prompt intro: {intro}")
+            logging.info(f"Payload keys: {list(payload.keys())}")
+            logging.debug(f"Microservices in payload: {len(payload['microservices'])}")
+            logging.debug(f"OpenAPI specs in payload: {len(payload['openapi_specs'])}")
 
             messages = [
                 {"role": "system", "content": intro},
@@ -249,7 +249,7 @@ class GenerationService:
                 ms.y = pos.get("y", 0.0)
                 updated += 1
         self.db.commit()
-        print(f"Updated positions for {updated} microservices")
+        logging.debug(f"Updated positions for {updated} microservices")
         return updated
     
     def _store_links(self, links: List[Dict]) -> int:
@@ -276,9 +276,9 @@ class GenerationService:
         ).first()
         
         if ms:
-            print(f"Found microservice ID: {ms.id}")
+            logging.info(f"Found microservice ID: {ms.id}")
         else:
-            print(f"Microservice not found: {name}/{namespace}")
+            logging.info(f"Microservice not found: {name}/{namespace}")
             
         return ms
         
@@ -322,7 +322,7 @@ class GenerationService:
                     existing_test.spec_id = spec_id
                 else:
                     # Create new test with default values matching the requested format
-                    print(f"Creating new test: {test_name}")
+                    logging.debug(f"Creating new test: {test_name}")
                     new_test = Test(
                         name=test_name,
                         code=complete_test,

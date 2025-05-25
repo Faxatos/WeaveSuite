@@ -1,5 +1,6 @@
 from db.database import Base, engine
 from sqlalchemy import inspect
+import logging
 
 def init_db():
     """Initialize database tables if they don't exist"""
@@ -9,11 +10,11 @@ def init_db():
         
         if not existing_tables:
             Base.metadata.create_all(bind=engine)
-            print("Database tables created successfully")
+            logging.debug("Database tables created successfully")
         else:
-            print("Database tables already exist")
+            logging.debug("Database tables already exist")
     except Exception as e:
-        print(f"ERROR initializing database: {e}")
+        logging.error(f"ERROR initializing database: {e}")
         raise
 
 if __name__ == "__main__":
