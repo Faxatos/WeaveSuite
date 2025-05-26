@@ -198,6 +198,7 @@ class GenerationService:
             intro = (
                 "You are a QA engineer. Generate pytest tests that hit each endpoint via http://api-gateway. "
                 "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas. "
+                "The tests must be performed ALWAYS from the gateway endpoint, that you can find in microservices payload, taking 'endpoint' of 'service_type' = gateway. "
                 "IMPORTANT: Return ONLY valid JSON in this exact format:\n"
                 "{\n"
                 '  "tests": "python test code here",\n'
@@ -205,8 +206,8 @@ class GenerationService:
             
             if include_layout:
                 intro += (
-                    '  "positions": [{"name": "service_name", "namespace": "namespace", "x": 100, "y": 200}],\n'
-                    '  "links": [{"source_name": "svc1", "source_namespace": "ns1", "target_name": "svc2", "target_namespace": "ns2", "label": "calls"}]\n'
+                    '  "positions": [{"name": "service_name", "namespace": "namespace", "x": "x_numeric_position", "y": "y_numeric_position"}],\n'
+                    '  "links": [{"source_name": "svc1", "source_namespace": "ns1", "target_name": "svc2", "target_namespace": "ns2", "label": "significant_label"}]\n'
                 )
             else:
                 intro = intro.rstrip(',\n') + '\n'
