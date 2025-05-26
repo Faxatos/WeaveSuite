@@ -198,7 +198,6 @@ class GenerationService:
             intro = (
                 "You are a QA engineer. Generate pytest tests that hit each endpoint via http://api-gateway. "
                 "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas. "
-                "You must define schema assertion for each test based on the OpenAPI specs in the payload. "
                 "IMPORTANT: Return ONLY valid JSON in this exact format:\n"
                 "{\n"
                 '  "tests": "python test code here",\n'

@@ -56,10 +56,10 @@ export default function TestsPage() {
         let testsData: SystemTest[];
         
         // Check if the data is wrapped in a 'data' property (from the API response)
-        if (data.data) {
-          testsData = data.data;
+        if (data.data?.tests) {
+          testsData = data.data.tests;
         } else {
-          testsData = data;
+          testsData = data.tests || data;
         }
         
         // Convert numeric ids to string for TestItem compatibility

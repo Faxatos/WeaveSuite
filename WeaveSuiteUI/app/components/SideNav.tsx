@@ -8,7 +8,7 @@ export default function SideNav() {
         className="mb-2 flex h-20 items-center justify-start rounded-md bg-blue-600 p-4 md:h-40"
         href="/"
       >
-        <div className="w-full sm:w-auto">
+        <div className="w-full sm:w-auto text-white text-2xl font-bold">
           WeaveSuite
         </div>
       </Link>
