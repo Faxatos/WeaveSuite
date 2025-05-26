@@ -1,22 +1,36 @@
-FROM node:20-alpine
+FROM node:20-slim
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g pnpm
+
+# Setup workdir and permissions
 WORKDIR /app
+RUN chown node:node /app
 
-# Install pnpm globally
-RUN npm install -g pnpm node-gyp
+# Copy dependency files
+COPY --chown=node:node pnpm-lock.yaml package.json ./
 
-COPY pnpm-lock.yaml package.json ./
+# Switch to non-root user
+USER node
 
 # Install all dependencies (including devDependencies)
 RUN pnpm install
 
-COPY . .
+# Copy application code
+COPY --chown=node:node . .
 
-# Expose the port for the Next.js development server
+# Build the project (requires devDependencies)
+RUN pnpm build
+
+# Remove devDependencies after build
+RUN pnpm install --prod
+
+# Environment variables
+ENV NODE_ENV=production
+ENV AUTH_TRUST_HOST=true
+
 EXPOSE 3000
-
-# Default environment variables for development
-ENV NODE_ENV development
-ENV AUTH_TRUST_HOST true
-
-CMD ["pnpm", "dev"]
+CMD ["pnpm", "start"]

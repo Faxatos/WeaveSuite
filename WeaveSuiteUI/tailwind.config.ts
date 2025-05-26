@@ -18,15 +18,19 @@ const config: Config = {
           600: '#2F6FEB',
         },
       },
-    },
-    keyframes: {
-      shimmer: {
-        '100%': {
-          transform: 'translateX(100%)',
+      keyframes: {
+        shimmer: {
+          '100%': {
+            transform: 'translateX(100%)',
+          },
         },
       },
     },
   },
-  plugins: [require('@tailwindcss/forms')],
+  plugins: [
+    // Note: @tailwindcss/forms plugin syntax may need to be updated for v4
+    // Check the plugin's v4 compatibility
+  ],
 };
+
 export default config;
