@@ -10,9 +10,9 @@ def init_db():
         
         if not existing_tables:
             Base.metadata.create_all(bind=engine)
-            logging.debug("Database tables created successfully")
-        else:
-            logging.debug("Database tables already exist")
+            #logging.debug("Database tables created successfully")
+        #else:
+            #logging.debug("Database tables already exist")
     except Exception as e:
         logging.error(f"ERROR initializing database: {e}")
         raise

@@ -10,12 +10,12 @@ class SpecService:
         self.db = db
         
     def fetch_and_store_specs(self):
-        """Fetch and store OpenAPI specs with proper timestamp"""
+        """Fetch and store OpenAPI specs"""
         updated = []
         services = self.db.query(Microservice).all()
         
         for service in services:
-            logging.info(f"DEBUG: fetching from service: {service.name} (id={service.id}, endpoint={service.endpoint})")
+            #logging.info(f"DEBUG: fetching from service: {service.name} (id={service.id}, endpoint={service.endpoint})")
             spec = None
 
             if service.openapi_path:
@@ -49,7 +49,7 @@ class SpecService:
                 except Exception as e:
                     logging.warning(f"Attempt failed for {service.name} at {path}: {str(e)}")
             
-            # Store the spec if found
+            #store the spec if found
             if spec is not None:
                 try:
                     self.store_spec(
@@ -71,16 +71,16 @@ class SpecService:
         paths = []
         
         if service.openapi_path == "gateway-aggregated":
-            # Special handling for gateway services
+            #handling for gateway services
             paths.extend([
                 #ToDo: add othet common gateway paths
                 'v3/api-docs/swagger-config'
             ])
         elif service.openapi_path:
-            # Use the annotated path first
+            #use the annotated path first
             paths.append(service.openapi_path.lstrip('/'))
             
-            # Add some common variations of the annotated path
+            #add some common variations of the annotated path
             annotation_path = service.openapi_path.lstrip('/')
             if not annotation_path.endswith('.json'):
                 paths.extend([
@@ -88,10 +88,10 @@ class SpecService:
                     f"{annotation_path}/swagger.json"
                 ])
         
-        # Always add fallback paths
+        #always add fallback paths
         paths.extend(self._get_default_paths(service))
         
-        # Remove duplicates while preserving order
+        #remove duplicates
         seen = set()
         return [p for p in paths if not (p in seen or seen.add(p))]
     
@@ -111,7 +111,7 @@ class SpecService:
             'swagger-ui/swagger.json'
         ]
         
-        # Add gateway-specific paths if this looks like a gateway
+        #add gateway-specific paths if this looks like a gateway
         if service.service_type == "gateway" or 'gateway' in service.name.lower():
             gateway_paths = [
                 #ToDo: add othet common gateway paths
@@ -126,19 +126,19 @@ class SpecService:
         if not isinstance(spec_data, dict):
             return False
         
-        # Check for OpenAPI 3.x
+        #check for OpenAPI 3.x
         if 'openapi' in spec_data:
             return True
         
-        # Check for Swagger 2.x
+        #check for Swagger 2.x
         if 'swagger' in spec_data:
             return True
         
-        # Check for swagger-config (gateway's config format)
+        #check for swagger-config (gateway's config format)
         if 'urls' in spec_data and isinstance(spec_data['urls'], list):
             return True
         
-        # Must have basic OpenAPI structure
+        #must have basic OpenAPI structure
         return 'info' in spec_data or 'paths' in spec_data
     
     def store_spec(self, microservice_id: int, spec: dict):

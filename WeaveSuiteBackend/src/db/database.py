@@ -6,14 +6,13 @@ from dotenv import load_dotenv
 from pathlib import Path
 import sys
 
-# Load environment variables from the .env file
+#load environment variables from the .env file
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Database configuration
+#database configuration
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "secret")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")

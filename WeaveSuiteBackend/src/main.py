@@ -13,15 +13,15 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup_event():
-    # Initialize database first
+    #initialize database first
     init_db()
     
     db = next(get_db())
     try:
-        # Initial discovery on startup
+        #initial discovery on startup
         DiscoveryService(db).discover_microservices()
         SpecService(db).fetch_and_store_specs()
-        # Generate tests after specs are stored
+        #generate tests after specs are stored
         GenerationService(db).generate_and_store_tests()
     finally:
         db.close()
@@ -51,7 +51,7 @@ async def get_service_map(db: Session = Depends(get_db)):
     try:
         service_map = DiscoveryService(db).get_graph()
         
-        # Check if the service map is empty (no nodes or no edges)
+        #check if the service map is empty (no nodes or no edges)
         if not service_map.get("nodes") or not service_map.get("edges"):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -60,7 +60,7 @@ async def get_service_map(db: Session = Depends(get_db)):
         
         return service_map
     except HTTPException:
-        # Re-raise HTTP exceptions (like our 404)
+        #re-raise HTTP exceptions (like our 404)
         raise
     except Exception as e:
         logging.error(f"Error retrieving service map: {str(e)}")
@@ -75,7 +75,7 @@ async def get_system_tests(db: Session = Depends(get_db)):
     try:
         tests = GenerationService(db).get_system_tests()
         
-        # Check if tests list is empty
+        #check if tests list is empty
         if not tests:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -84,7 +84,7 @@ async def get_system_tests(db: Session = Depends(get_db)):
         
         return {"tests": tests}
     except HTTPException:
-        # Re-raise HTTP exceptions (like our 404)
+        #re-raise HTTP exceptions (like our 404)
         raise
     except Exception as e:
         logging.error(f"Error retrieving system tests: {str(e)}")

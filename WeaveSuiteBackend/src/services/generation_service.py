@@ -13,17 +13,17 @@ from sqlalchemy.orm import Session
 
 from db.models import OpenAPISpec, Test, Microservice, Link
 
-# Load environment variables from the .env file
+#load environment variables from the .env file (only useful for debug, when using pods you can set with the manifests env vars)
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# Add the parent directory to sys.path
+#add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 class GenerationService:
     def __init__(self, db: Session):
         self.db = db
-        # Configure Google AI with API key from environment variable
+        #configure Google AI with API key from env var
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
@@ -33,16 +33,16 @@ class GenerationService:
     def generate_and_store_tests(self) -> Dict[str, Any]:
         """Generate tests from all OpenAPI specs and store them in the database"""
         try:
-            # Get all specs from the database
+            #get all specs from the database
             specs = self.db.query(OpenAPISpec).all()
             if not specs:
                 logging.warning("No OpenAPI specs found in database")
                 return {"status": "error", "message": "No OpenAPI specs found in database"}
             
-            # Determine if this is the first run (no links exist yet)
+            #determine if this is the first run (no links exist yet)
             first_run = self.db.query(Link).count() == 0
                 
-            # Build microservice info for the prompt
+            #build microservice info for the prompt
             microservice_info = {
                 spec.id: {
                     "title": spec.spec.get("info", {}).get("title", f"Service_{spec.id}"),
@@ -52,7 +52,7 @@ class GenerationService:
                 for spec in specs
             }
 
-            # Generate via LLM
+            #generate via LLM!
             response_data = self._generate_with_llm(microservice_info, specs, first_run)
             
             tests_created = self._store_tests(response_data.get("tests", ""), specs)
@@ -63,7 +63,7 @@ class GenerationService:
                 links_created = self._store_links(response_data.get("links", []))
                 result.update({"positions_updated": positions_updated, "links_created": links_created})
 
-            logging.debug(f"Store result: {result}")
+            #logging.debug(f"Store result: {result}")
             return result
             
         except Exception as e:
@@ -77,10 +77,10 @@ class GenerationService:
             
             result = []
             for test in tests:
-                # Extract endpoint info from test name and code
+                #extract endpoint info from test name and code
                 endpoint_info = self._extract_endpoint_info(test.name, test.code)
                 
-                # Parse services visited from JSON string if available
+                #parse services visited from JSON string if available
                 services_visited = []
                 if test.services_visited:
                     try:
@@ -100,7 +100,7 @@ class GenerationService:
                     "servicesVisited": services_visited
                 }
 
-                logging.debug(f"test_data: {test_data}")
+                #logging.debug(f"test_data: {test_data}")
                 result.append(test_data)
             
             return result
@@ -111,21 +111,21 @@ class GenerationService:
     
     def _get_friendly_test_name(self, test_name: str) -> str:
         """Convert test_user_service_get_profile to 'User Profile'"""
-        # Remove test_ prefix
+        #remove test_ prefix
         if test_name.startswith("test_"):
             name = test_name[5:]
         else:
             name = test_name
             
-        # Extract meaningful parts and capitalize
+        #extract meaningful parts and capitalize
         parts = name.split("_")
-        # Remove method names that might appear at the end
+        #remove method names that might appear at the end
         method_names = ["get", "post", "put", "delete", "patch"]
         filtered_parts = [p for p in parts if p not in method_names and p != "service"]
         
-        # Join words and capitalize each
+        #join words and capitalize each
         friendly_name = " ".join(word.capitalize() for word in filtered_parts)
-        logging.debug(f"Friendly name result: {friendly_name}")
+        #logging.debug(f"Friendly name result: {friendly_name}")
         return friendly_name
     
     def _extract_endpoint_info(self, test_name: str, test_code: str) -> Dict[str, Any]:
@@ -136,7 +136,7 @@ class GenerationService:
             "params": {}
         }
         
-        # Try to extract method from test name
+        #try to extract method from test name
         method_map = {
             "get": "GET",
             "post": "POST",
@@ -150,51 +150,51 @@ class GenerationService:
                 endpoint["method"] = method_map[method_key]
                 break
         
-        # Extract path and params from code
+        #extract path and params from code
         if test_code:
-            # Look for URL patterns in the code
+            #look for URL patterns in the code
             url_pattern = re.search(r"(client\.(get|post|put|delete|patch)|request\.(get|post|put|delete|patch))\(['\"]([^'\"]+)['\"]", test_code)
             if url_pattern:
-                # Extract method if we didn't get it from name
+                #extract method if we didn't get it from name
                 if not endpoint["method"]:
                     method = url_pattern.group(2)
                     endpoint["method"] = method.upper()
                 
-                # Extract path
+                #extract path
                 path = url_pattern.group(4)
                 endpoint["path"] = path
                 
-                # Extract query parameters if present
+                #extract query parameters if present
                 if "?" in path:
                     path_part, query_part = path.split("?", 1)  
                     endpoint["path"] = path_part
                     
-                    # Parse query parameters
+                    #parse query parameters
                     param_pairs = query_part.split("&")
                     for pair in param_pairs:
                         if "=" in pair:
                             key, value = pair.split("=", 1)
                             endpoint["params"][key] = value
             
-            # Look for request parameters in the code (for POST/PUT)
+            #look for request parameters in the code (for POST/PUT)
             param_pattern = re.search(r"send\(([^)]+)\)", test_code)
             if param_pattern and (endpoint["method"] == "POST" or endpoint["method"] == "PUT"):
-                # Simplified parameter extraction - in real code would need more robust parsing
+                #simplified parameter extraction - in real code would need more robust parsing
                 param_body = param_pattern.group(1)
-                # Add dummy params for demonstration
+                #add dummy params for demonstration
                 if param_body and "{" in param_body:
-                    # Just identify there are params without parsing the full structure
+                    #just identify there are params without parsing the full structure
                     key_pattern = re.findall(r"['\"]([\w]+)['\"]:", param_body)
                     for key in key_pattern:
                         endpoint["params"][key] = "..." # Placeholder value
         
-        logging.debug(f"Final endpoint info: {endpoint}")
+        #logging.debug(f"Final endpoint info: {endpoint}")
         return endpoint
     
     def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec], include_layout: bool) -> Dict[str, Any]:
         """Generate test code using Google AI API"""
         try:
-            # Create a prompt for the LLM
+            #prompt for the LLM
             intro = (
                 "You are a QA engineer. Generate pytest tests that hit each endpoint via http://api-gateway. "
                 "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas. "
@@ -224,10 +224,10 @@ class GenerationService:
             logging.debug(f"Microservices in payload: {len(payload['microservices'])}")
             logging.debug(f"OpenAPI specs in payload: {len(payload['openapi_specs'])}")
 
-            # Combine system prompt with payload data
+            #combine system prompt with payload data
             full_prompt = f"{intro}\n\nData: {json.dumps(payload)}"
 
-            # Generate content using Google AI
+            #generate content using Google AI
             response = self.model.generate_content(
                 full_prompt,
                 generation_config=genai.types.GenerationConfig(
@@ -236,7 +236,7 @@ class GenerationService:
                 )
             )
 
-            # Check if response is valid
+            #check if response is valid
             if not response or not hasattr(response, 'text'):
                 logging.error("No response received from Google AI API")
                 raise Exception("No response received from Google AI API")
@@ -246,16 +246,16 @@ class GenerationService:
                 logging.error("Empty response from Google AI API")
                 raise Exception("Empty response from Google AI API")
             
-            logging.debug(f"Raw response content: {content[:500]}...")  # Log first 500 chars
+            #logging.debug(f"Raw response content: {content[:500]}...") 
             
-            # Strip markdown fences if present
+            #strip markdown fences if present
             content = content.strip()
             if content.startswith("```json"):
                 content = content[len("```json"):].strip()
                 if content.endswith("```"):
                     content = content[:-3].strip()
             elif content.startswith("```"):
-                # Handle generic code fences
+                #handle generic code fences
                 lines = content.split('\n')
                 if lines[0].startswith("```"):
                     lines = lines[1:]
@@ -263,7 +263,7 @@ class GenerationService:
                     lines = lines[:-1]
                 content = '\n'.join(lines)
             
-            # Validate that we have content before parsing
+            #validate that we have content before parsing
             if not content.strip():
                 logging.error("Content is empty after processing")
                 raise Exception("Content is empty after processing")
@@ -291,7 +291,7 @@ class GenerationService:
                 ms.y = pos.get("y", 0.0)
                 updated += 1
         self.db.commit()
-        logging.debug(f"Updated positions for {updated} microservices")
+        #logging.debug(f"Updated positions for {updated} microservices")
         return updated
     
     def _store_links(self, links: List[Dict]) -> int:
@@ -317,53 +317,53 @@ class GenerationService:
             namespace=namespace
         ).first()
         
-        if ms:
-            logging.info(f"Found microservice ID: {ms.id}")
-        else:
-            logging.info(f"Microservice not found: {name}/{namespace}")
+        #if ms:
+        #    logging.info(f"Found microservice ID: {ms.id}")
+        #else:
+        #    logging.info(f"Microservice not found: {name}/{namespace}")
             
         return ms
         
     def _store_tests(self, test_code: str, specs: List[OpenAPISpec]) -> int:
         """Parse and store individual tests from the generated code"""
-        # Split the test code into individual test functions
+        #split the test code into individual test functions
         import re
         
-        # Find all test functions in the code
+        #find all test functions in the code
         test_functions = re.findall(r'def (test_[^\(]+)\([^\)]*\):(.*?)(?=\n\s*def test_|\Z)', 
                                    test_code, re.DOTALL)
         
         tests_created = 0
         
-        # Store each test function as a separate Test record
+        #store each test function as a separate Test record
         for test_name, test_body in test_functions:
-            # Try to determine which spec this test is for
+            #try to determine which spec this test is for
             spec_id = None
             for spec in specs:
                 spec_title = spec.spec.get('info', {}).get('title', '')
-                # Convert to snake case for comparison
+                
                 spec_name = spec_title.lower().replace(' ', '_').replace('-', '_')
                 if spec_name in test_name:
                     spec_id = spec.id
                     break
             
-            # Create the complete test function
+            #create the complete test function
             complete_test = f"def {test_name}(client):{test_body}"
             
-            # Extract endpoint path and method info for the test
+            #extract endpoint path and method info for the test
             endpoint_info = self._extract_endpoint_info(test_name, complete_test)
             
-            # Store in the database
+            #store in the database
             try:
-                # Check if test already exists
+                #check if test already exists
                 existing_test = self.db.query(Test).filter_by(name=test_name).first()
                 
                 if existing_test:
-                    # Update existing test
+                    #update existing test
                     existing_test.code = complete_test
                     existing_test.spec_id = spec_id
                 else:
-                    # Create new test with default values matching the requested format
+                    #create new test with default values matching the requested format
                     logging.debug(f"Creating new test: {test_name}")
                     new_test = Test(
                         name=test_name,
@@ -373,7 +373,7 @@ class GenerationService:
                         last_execution=None,
                         execution_time=0,
                         error_message=None,
-                        services_visited=json.dumps([])  # Empty array as JSON string
+                        services_visited=json.dumps([])  #empty array as JSON string
                     )
                     self.db.add(new_test)
                 
@@ -382,7 +382,6 @@ class GenerationService:
             except Exception as e:
                 logging.error(f"Failed to store test {test_name}: {str(e)}")
                 
-        # Commit all changes
         try:
             self.db.commit()
         except Exception as e:
