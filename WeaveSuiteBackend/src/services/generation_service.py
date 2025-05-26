@@ -8,7 +8,7 @@ import re
 from datetime import datetime
 from typing import List, Dict, Any
 
-import openai
+from openai import OpenAI
 from sqlalchemy.orm import Session
 
 from db.models import OpenAPISpec, Test, Microservice, Link
@@ -24,10 +24,7 @@ class GenerationService:
     def __init__(self, db: Session):
         self.db = db
         # Get API key from environment variable
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        if not openai.api_key:
-            logging.error("OPENAI_API_KEY environment variable not set")
-            raise ValueError("OPENAI_API_KEY environment variable not set")
+        self.openai_client = OpenAI(api_key = os.getenv("OPENAI_API_KEY"))
             
     def generate_and_store_tests(self) -> Dict[str, Any]:
         """Generate tests from all OpenAPI specs and store them in the database"""
@@ -219,7 +216,7 @@ class GenerationService:
                 {"role": "user", "content": json.dumps(payload)}
             ]
 
-            resp = openai.ChatCompletion.create(
+            resp = self.openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
                 temperature=0.2,
