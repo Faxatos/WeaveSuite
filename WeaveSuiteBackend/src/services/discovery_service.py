@@ -127,8 +127,7 @@ class DiscoveryService:
         
         # Gateway-specific logic based on service name
         if 'gateway' in service_name.lower():
-            # For gateways, we might want to return a special indicator or multiple paths
-            return "gateway-aggregated"  # Special marker for gateway services
+            return "gateway-aggregated"  # Special marker for gateway services (no annotations here!)
         
         logging.debug(f"No OpenAPI path annotation found for service {service_name}")
         return None
