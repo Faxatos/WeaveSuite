@@ -28,8 +28,7 @@ const config: Config = {
     },
   },
   plugins: [
-    // Note: @tailwindcss/forms plugin syntax may need to be updated for v4
-    // Check the plugin's v4 compatibility
+    require('@tailwindcss/forms')({ strategy: 'class' })
   ],
 };
 
