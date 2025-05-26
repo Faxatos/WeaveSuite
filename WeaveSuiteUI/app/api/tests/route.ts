@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { NextResponse } from 'next/server';
 
 // Define the API endpoint for the backend Python service
@@ -33,9 +33,9 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const action = searchParams.get('action') || 'getTests';
   
-  let response: ApiResponse<any> = { data: null };
+  const response: ApiResponse<TestData[] | unknown> = { data: null };
   let status = 200;
-  
+
   try {
     if (action === 'getTests') {
       const testsData = await fetchTestsData();
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
       response.error = 'Server error occurred';
     }
   }
-  
+
   return NextResponse.json(response, { status });
 }
 
@@ -80,7 +80,7 @@ async function fetchTestsData(): Promise<TestData[]> {
     console.error('Error fetching test data from backend:', error);
     
     // Check if this is a 404 error (no tests found)
-    if (axios.isAxiosError(error as any) && (error as any).response?.status === 404) {
+    if (axios.isAxiosError(error as AxiosError) && (error as AxiosError).response?.status === 404) {
       throw new Error('No test data available. No tests have been defined or run.');
     }
     
@@ -90,7 +90,7 @@ async function fetchTestsData(): Promise<TestData[]> {
 }
 
 // Trigger the test run process on the backend
-async function triggerTestRun() {
+async function triggerTestRun(): Promise<unknown> {
   try {
     const response = await axios.post(`${API_BASE_URL}/api/run-tests`);
     return response.data;

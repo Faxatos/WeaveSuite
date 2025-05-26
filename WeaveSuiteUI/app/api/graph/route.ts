@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { NextResponse } from 'next/server';
 
 // Define the API endpoint for the backend Python service
@@ -46,8 +46,8 @@ interface ApiResponse<T> {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const action = searchParams.get('action') || 'getGraph';
-
-  let response: ApiResponse<any> = { data: null };
+  
+  const response: ApiResponse<ServiceGraph | unknown> = { data: null };
   let status = 200;
 
   try {
@@ -86,7 +86,7 @@ export async function GET(req: Request) {
 }
 
 // Fetch the service graph from the Python backend
-async function fetchServiceGraph(): Promise<ServiceGraph | null> {
+async function fetchServiceGraph(): Promise<ServiceGraph> {
   try {
     const response = await axios.get(`${API_BASE_URL}/api/graph`);
     return response.data as ServiceGraph;
@@ -94,7 +94,7 @@ async function fetchServiceGraph(): Promise<ServiceGraph | null> {
     console.error('Error fetching service graph from backend:', error);
     
     // Check if this is a 404 error (service map is empty)
-    if (axios.isAxiosError(error as any) && (error as any).response?.status === 404) {
+    if (axios.isAxiosError(error as AxiosError) && (error as AxiosError).response?.status === 404) {
       throw new Error('Service map is empty. No microservices or links found.');
     }
     
@@ -104,7 +104,7 @@ async function fetchServiceGraph(): Promise<ServiceGraph | null> {
 }
 
 // Trigger the spec update process on the backend
-async function triggerSpecUpdate() {
+async function triggerSpecUpdate(): Promise<unknown> {
   try {
     const response = await axios.post(`${API_BASE_URL}/api/update-specs`);
     return response.data;
