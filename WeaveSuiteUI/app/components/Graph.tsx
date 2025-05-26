@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import cytoscape from 'cytoscape';
 import '../styles/graph.css';
 
@@ -128,16 +128,6 @@ export default function Graph({ initialData, onSave }: GraphProps) {
       }
     }));
     
-    // Log the structure of the graphData.edges to understand the format
-    //console.log("First edge structure:", JSON.stringify(graphData.edges[0], null, 2));
-    //console.log("Edge 8 structure (one that works):", JSON.stringify(graphData.edges.find(e => e.data.id === 8), null, 2));
-    
-    // Log each edge's source and target for debugging
-    /*console.log("Edge sources and targets:");
-    graphData.edges.forEach(edge => {
-      console.log(`Edge ${edge.data.id}: source=${edge.data.source} (exists: ${validNodeIds.has(edge.data.source)}), target=${edge.data.target} (exists: ${validNodeIds.has(edge.data.target)})`);
-    });*/
-    
     // Filter and format edges with string IDs and correct source/target references
     // Make edge IDs unique by prefixing them with 'e' to avoid collision with node IDs
     const edges = graphData.edges
@@ -159,7 +149,7 @@ export default function Graph({ initialData, onSave }: GraphProps) {
   };
 
   // Function to initialize or update the graph
-  const initializeGraph = () => {
+  const initializeGraph = useCallback(() => {
     if (!containerRef.current) return;
     
     // Clean up existing instance if it exists
@@ -177,14 +167,11 @@ export default function Graph({ initialData, onSave }: GraphProps) {
     // Convert the data to the format Cytoscape expects
     const elements = convertDataForCytoscape();
     
-    // Debug the elements array
-    //console.log('All elements being passed to cytoscape:', elements);
-    
     try {
       // Create new Cytoscape instance with all elements
       const cy = cytoscape({
         container: containerRef.current,
-        elements: elements as any, // Type assertion to fix TypeScript error
+        elements: elements as cytoscape.ElementDefinition[], // Properly typed instead of any
         style: cytoscapeStylesheet,
         layout: { name: 'preset' },
         userZoomingEnabled: true,
@@ -194,28 +181,6 @@ export default function Graph({ initialData, onSave }: GraphProps) {
       
       // Store reference
       cyRef.current = cy;
-      
-      // Debug info
-      //console.log(`Created ${cy.nodes().length} nodes and ${cy.edges().length} edges`);
-      
-      // Detailed edge debugging
-      cy.edges().forEach(edge => {
-        const sourceNode = cy.getElementById(edge.data('source'));
-        const targetNode = cy.getElementById(edge.data('target'));
-        
-        /*console.log(`Edge ${edge.id()} inspection:`, {
-          edgeExists: edge.length > 0,
-          sourceNodeExists: sourceNode.length > 0,
-          targetNodeExists: targetNode.length > 0,
-          sourceId: edge.data('source'),
-          targetId: edge.data('target'),
-          label: edge.data('label')
-        });
-        
-        if ((sourceNode && sourceNode.length > 0) && (targetNode && targetNode.length > 0)) {
-          console.log(`Valid edge: ${edge.id()} from ${edge.data('source')} (${sourceNode.data('name')}) to ${edge.data('target')} (${targetNode.data('name')})`);
-        }*/
-      });
       
       // Set up event handlers
       cy.on('tap', 'node, edge', (event) => {
@@ -244,7 +209,7 @@ export default function Graph({ initialData, onSave }: GraphProps) {
     } catch (error) {
       console.error("Error initializing Cytoscape:", error);
     }
-  };
+  }, [graphData, editMode]);
 
   // Initialize graph when data changes
   useEffect(() => {
@@ -255,7 +220,7 @@ export default function Graph({ initialData, onSave }: GraphProps) {
         cyRef.current.destroy();
       }
     };
-  }, [graphData, editMode]);
+  }, [initializeGraph]);
 
   const findNewNodePosition = () => {
     const position = { x: 300, y: 300 };
@@ -505,4 +470,4 @@ export default function Graph({ initialData, onSave }: GraphProps) {
       )}
     </div>
   );
-}
+} 
