@@ -8,7 +8,7 @@ import re
 from datetime import datetime
 from typing import List, Dict, Any
 
-from openai import OpenAI
+import google.generativeai as genai
 from sqlalchemy.orm import Session
 
 from db.models import OpenAPISpec, Test, Microservice, Link
@@ -23,8 +23,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 class GenerationService:
     def __init__(self, db: Session):
         self.db = db
-        # Get API key from environment variable
-        self.openai_client = OpenAI(api_key = os.getenv("OPENAI_API_KEY"))
+        # Configure Google AI with API key from environment variable
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable is required")
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
             
     def generate_and_store_tests(self) -> Dict[str, Any]:
         """Generate tests from all OpenAPI specs and store them in the database"""
@@ -162,7 +166,7 @@ class GenerationService:
                 
                 # Extract query parameters if present
                 if "?" in path:
-                    path_part, query_part = path.split("?", 1)
+                    path_part, query_part = path.split("?", 1)  
                     endpoint["path"] = path_part
                     
                     # Parse query parameters
@@ -188,18 +192,27 @@ class GenerationService:
         return endpoint
     
     def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec], include_layout: bool) -> Dict[str, Any]:
-        """Generate test code using OpenAI API"""
+        """Generate test code using Google AI API"""
         try:
             # Create a prompt for the LLM
             intro = (
-            "You are a QA engineer. Generate pytest tests that hit each endpoint via http://api-gateway. "
-            "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas."
+                "You are a QA engineer. Generate pytest tests that hit each endpoint via http://api-gateway. "
+                "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas. "
+                "You must define schema assertion for each test based on the OpenAPI specs in the payload. "
+                "IMPORTANT: Return ONLY valid JSON in this exact format:\n"
+                "{\n"
+                '  "tests": "python test code here",\n'
             )
+            
             if include_layout:
                 intro += (
-                    " Also provide for each microservices positions (name, namespace, x, y) and directional links "
-                    "(source_name, source_namespace, target_name, target_namespace, label) that connects them as a graph."
+                    '  "positions": [{"name": "service_name", "namespace": "namespace", "x": 100, "y": 200}],\n'
+                    '  "links": [{"source_name": "svc1", "source_namespace": "ns1", "target_name": "svc2", "target_namespace": "ns2", "label": "calls"}]\n'
                 )
+            else:
+                intro = intro.rstrip(',\n') + '\n'
+            
+            intro += "}\n\nDo not include any markdown formatting or explanations, just pure JSON."
 
             payload = {
                 "microservices": microservice_info,
@@ -211,26 +224,58 @@ class GenerationService:
             logging.debug(f"Microservices in payload: {len(payload['microservices'])}")
             logging.debug(f"OpenAPI specs in payload: {len(payload['openapi_specs'])}")
 
-            messages = [
-                {"role": "system", "content": intro},
-                {"role": "user", "content": json.dumps(payload)}
-            ]
+            # Combine system prompt with payload data
+            full_prompt = f"{intro}\n\nData: {json.dumps(payload)}"
 
-            resp = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                temperature=0.2,
-                max_tokens=4000,
+            # Generate content using Google AI
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.2,
+                    max_output_tokens=4000,
+                )
             )
 
-            content = resp.choices[0].message.content
-            # strip markdown fences
+            # Check if response is valid
+            if not response or not hasattr(response, 'text'):
+                logging.error("No response received from Google AI API")
+                raise Exception("No response received from Google AI API")
+            
+            content = response.text
+            if not content:
+                logging.error("Empty response from Google AI API")
+                raise Exception("Empty response from Google AI API")
+            
+            logging.debug(f"Raw response content: {content[:500]}...")  # Log first 500 chars
+            
+            # Strip markdown fences if present
+            content = content.strip()
             if content.startswith("```json"):
-                content = content[len("```json"):].strip().strip('`')
-            return json.loads(content)
+                content = content[len("```json"):].strip()
+                if content.endswith("```"):
+                    content = content[:-3].strip()
+            elif content.startswith("```"):
+                # Handle generic code fences
+                lines = content.split('\n')
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                content = '\n'.join(lines)
+            
+            # Validate that we have content before parsing
+            if not content.strip():
+                logging.error("Content is empty after processing")
+                raise Exception("Content is empty after processing")
+            
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError as json_err:
+                logging.error(f"Failed to parse JSON. Content: {content}")
+                raise Exception(f"Invalid JSON response: {json_err}")
             
         except Exception as e:
-            logging.error(f"Error calling OpenAI API: {str(e)}")
+            logging.error(f"Error calling Google AI API: {str(e)}")
             raise
 
     def _store_positions(self, positions: List[Dict]) -> int:

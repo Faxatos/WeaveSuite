@@ -20,7 +20,7 @@ class DiscoveryService:
             logging.debug(f"Found {len(services)} services in Kubernetes")
             
             existing_services = {
-                (ms.name, ms.namespace) 
+                (ms.name, ms.namespace): ms 
                 for ms in self.db.query(Microservice).all()
             }
             
