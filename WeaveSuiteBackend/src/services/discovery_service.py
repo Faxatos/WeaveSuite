@@ -11,8 +11,34 @@ class DiscoveryService:
     def __init__(self, db: Session):
         self.db = db
         
+        # Define excluded namespaces (system namespaces)
+        self.excluded_namespaces = {
+            'kube-system',
+            'ingress-nginx',
+            'kube-public',
+            'kube-node-lease',
+            'kubernetes-dashboard'
+        }
+        
+        # Define excluded service names (infrastructure services)
+        self.excluded_services = {
+            'kubernetes',
+            'kube-dns',
+            'metrics-server',
+            'postgres',
+            'weavesuite-backend',
+            'weavesuite-frontend',
+        }
+        
+        # Define excluded service patterns
+        self.excluded_patterns = [
+            'weavesuite',
+            'admission',
+            'controller'
+        ]
+        
     def discover_microservices(self):
-        """Discover and store new K8s services with proper constraints"""
+        """Discover and store new K8s services with proper constraints and architecture filtering"""
         try:
             config.load_incluster_config()
             k8s = client.CoreV1Api()
@@ -26,12 +52,19 @@ class DiscoveryService:
             
             new_services = []
             updated_services = []
+            excluded_count = 0
             
             for service in services:
                 name = service.metadata.name
                 namespace = service.metadata.namespace
                 labels = service.metadata.labels or {}
                 annotations = service.metadata.annotations or {}
+                
+                # Check if service should be excluded
+                if self._should_exclude_service(name, namespace, labels, annotations):
+                    excluded_count += 1
+                    continue
+                
                 logging.debug(f"Processing service {name} in namespace {namespace}")
                 logging.debug(f"Service labels: {labels}")
 
@@ -46,7 +79,6 @@ class DiscoveryService:
                 service_key = (name, namespace)
 
                 if service_key not in existing_services:
-                # Create new microservice
                     try:
                         new_ms = Microservice(
                             name=name,
@@ -84,9 +116,12 @@ class DiscoveryService:
                         logging.info(f"Updated service: {name} with OpenAPI path: {openapi_path}")
             
             self.db.commit()
+            logging.info(f"Discovery complete: {len(new_services)} new, {len(updated_services)} updated, {excluded_count} excluded")
+            
             return {
                 "discovered": new_services,
-                "updated": updated_services
+                "updated": updated_services,
+                "excluded": excluded_count
             }
             
         except client.exceptions.ApiException as e:
@@ -97,6 +132,52 @@ class DiscoveryService:
             logging.error(f"Discovery failed: {str(e)}")
             self.db.rollback()
             raise
+
+    def _should_exclude_service(self, name: str, namespace: str, labels: dict, annotations: dict) -> bool:
+        """Determine if a service should be excluded from discovery"""
+        
+        # Exclude services from system namespaces
+        if namespace in self.excluded_namespaces:
+            logging.debug(f"Excluding service {name} from system namespace {namespace}")
+            return True
+        
+        # Exclude specific infrastructure services
+        if name in self.excluded_services:
+            logging.debug(f"Excluding infrastructure service {name}")
+            return True
+        
+        # Exclude services matching certain patterns
+        name_lower = name.lower()
+        for pattern in self.excluded_patterns:
+            if pattern in name_lower:
+                logging.debug(f"Excluding service {name} matching pattern '{pattern}'")
+                return True
+        
+        # Exclude services with specific labels indicating they're not part of the business architecture
+        infrastructure_labels = [
+            labels.get("app.kubernetes.io/component") in ["controller", "admission", "dns", "metrics"],
+            labels.get("k8s-app") in ["kube-dns", "metrics-server"],
+            labels.get("app") in ["postgres", "database", "zipkin"],
+            labels.get("component") in ["database", "monitoring", "logging"]
+        ]
+        
+        if any(infrastructure_labels):
+            logging.debug(f"Excluding service {name} based on infrastructure labels")
+            return True
+        
+        # Exclude services with monitoring/logging annotations
+        monitoring_annotations = [
+            "prometheus.io/scrape" in annotations,
+            "logging.coreos.com/" in str(annotations.keys()),
+            "monitoring.coreos.com/" in str(annotations.keys())
+        ]
+        
+        # Only exclude if it's clearly a monitoring service (not just being monitored)
+        if any(monitoring_annotations) and any(monitor_name in name_lower for monitor_name in ['prometheus', 'grafana', 'jaeger', 'zipkin']):
+            logging.debug(f"Excluding monitoring service {name}")
+            return True
+        
+        return False
     
     def _extract_openapi_path(self, annotations, labels, service_name):
         """Extract OpenAPI path from service annotations with fallback logic"""
@@ -127,7 +208,7 @@ class DiscoveryService:
         
         # Gateway-specific logic based on service name
         if 'gateway' in service_name.lower():
-            return "gateway-aggregated"  # Special marker for gateway services (no annotations here!)
+            return "gateway-aggregated"
         
         logging.debug(f"No OpenAPI path annotation found for service {service_name}")
         return None
@@ -147,10 +228,12 @@ class DiscoveryService:
         if any(gateway_indicators):
             return True
         
-        # Check service name patterns
-        gateway_name_patterns = ['gateway', 'api-gateway', 'ingress', 'proxy', 'router']
+        # Check service name patterns (but exclude ingress controllers which are infrastructure)
+        gateway_name_patterns = ['gateway', 'api-gateway']
         if any(pattern in service_name.lower() for pattern in gateway_name_patterns):
-            return True
+            # Make sure it's not an infrastructure gateway like ingress controller
+            if 'ingress' not in service_name.lower() and 'controller' not in service_name.lower():
+                return True
         
         return False
 
