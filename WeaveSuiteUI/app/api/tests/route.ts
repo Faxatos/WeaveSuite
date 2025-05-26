@@ -74,7 +74,7 @@ export async function GET(req: Request) {
 // Fetch the test data from the Python backend
 async function fetchTestsData(): Promise<TestData[]> {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/tests`);
+    const response = await axios.get(`${API_BASE_URL}/api/system-tests`);
     return response.data as TestData[];
   } catch (error) {
     console.error('Error fetching test data from backend:', error);
