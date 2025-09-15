@@ -142,15 +142,32 @@ class SpecService:
         return 'info' in spec_data or 'paths' in spec_data
     
     def store_spec(self, microservice_id: int, spec: dict):
+        """Store or update OpenAPI spec for a microservice"""
         try:
-            new_spec = OpenAPISpec(
-                microservice_id=microservice_id,
-                spec=spec,
-                fetched_at=datetime.utcnow()
-            )
-            self.db.add(new_spec)
+            existing_spec = self.db.query(OpenAPISpec).filter_by(
+                microservice_id=microservice_id
+            ).first()
+            
+            if existing_spec:
+                #update existing spec
+                existing_spec.spec = spec
+                existing_spec.fetched_at = datetime.utcnow()
+                logging.info(f"Updated existing OpenAPI spec for microservice_id {microservice_id}")
+                spec_record = existing_spec
+            else:
+                #create new spec
+                new_spec = OpenAPISpec(
+                    microservice_id=microservice_id,
+                    spec=spec,
+                    fetched_at=datetime.utcnow()
+                )
+                self.db.add(new_spec)
+                logging.info(f"Created new OpenAPI spec for microservice_id {microservice_id}")
+                spec_record = new_spec
+            
             self.db.commit()
-            return new_spec
+            return spec_record
+            
         except Exception as e:
             self.db.rollback()
             logging.error(f"Failed to store spec: {str(e)}")
