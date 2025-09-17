@@ -13,6 +13,17 @@ from sqlalchemy.orm import Session
 
 from db.models import OpenAPISpec, Test, Microservice, Link
 
+#logging config
+logging.basicConfig(
+    level=logging.DEBUG,  # Set to DEBUG to see all logs
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),  # Ensure logs go to stdout
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
 #load environment variables from the .env file (only useful for debug, when using pods you can set with the manifests env vars)
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -63,7 +74,7 @@ class GenerationService:
                 links_created = self._store_links(response_data.get("links", []))
                 result.update({"positions_updated": positions_updated, "links_created": links_created})
 
-            #logging.debug(f"Store result: {result}")
+            logging.info(f"Generation completed successfully: {result}")
             return result
             
         except Exception as e:
@@ -204,7 +215,7 @@ class GenerationService:
                 '  "tests": "python test code here",\n'
             )
             
-            if include_layout:
+            if include_layout: #true only when generating microservices graph
                 intro += (
                     '  "positions": [{"name": "service_name", "namespace": "namespace", "x": "x_numeric_position", "y": "y_numeric_position"}],\n'
                     '  "links": [{"source_name": "svc1", "source_namespace": "ns1", "target_name": "svc2", "target_namespace": "ns2", "label": "significant_label"}]\n'
@@ -219,13 +230,36 @@ class GenerationService:
                 "openapi_specs": {spec.id: spec.spec for spec in specs}
             }
 
-            logging.info(f"Prompt intro: {intro}")
-            logging.info(f"Payload keys: {list(payload.keys())}")
-            logging.debug(f"Microservices in payload: {len(payload['microservices'])}")
-            logging.debug(f"OpenAPI specs in payload: {len(payload['openapi_specs'])}")
-
             #combine system prompt with payload data
             full_prompt = f"{intro}\n\nData: {json.dumps(payload)}"
+
+            #complete prompt being sent to LLM
+            logging.info(f"Prompt intro: {intro}")
+            logging.info(f"Payload summary:")
+            logging.info(f"  - Microservices count: {len(payload['microservices'])}")
+            logging.info(f"  - OpenAPI specs count: {len(payload['openapi_specs'])}")
+            logging.info(f"  - Include layout: {include_layout}")
+            
+            #log microservice details
+            logging.info("Microservices in payload:")
+            for spec_id, ms_info in payload['microservices'].items():
+                logging.info(f"  - Spec ID {spec_id}: {ms_info['name']}/{ms_info['namespace']} ({ms_info['title']})")
+            
+            #log OpenAPI spec summaries
+            logging.info("OpenAPI specs being processed:")
+            for spec_id, spec_data in payload['openapi_specs'].items():
+                spec_title = spec_data.get('info', {}).get('title', 'Unknown')
+                spec_version = spec_data.get('info', {}).get('version', 'Unknown')
+                paths_count = len(spec_data.get('paths', {}))
+                logging.info(f"  - Spec ID {spec_id}: '{spec_title}' v{spec_version} ({paths_count} paths)")
+                
+                for path, methods in spec_data.get('paths', {}).items():
+                    for method in methods.keys():
+                        if method.upper() in ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']:
+                            logging.info(f"    - {method.upper()} {path}")
+
+            logging.info(f"Full prompt length: {len(full_prompt)} characters")
+            logging.debug(f"Full prompt content:\n{full_prompt}")
 
             #generate content using Google AI
             response = self.model.generate_content(
@@ -236,20 +270,15 @@ class GenerationService:
                 )
             )
 
-            #check if response is valid
-            if not response or not hasattr(response, 'text'):
-                logging.error("No response received from Google AI API")
-                raise Exception("No response received from Google AI API")
-            
             content = response.text
-            if not content:
-                logging.error("Empty response from Google AI API")
-                raise Exception("Empty response from Google AI API")
-            
-            #logging.debug(f"Raw response content: {content[:500]}...") 
+
+            logging.info(f"Response received successfully")
+            logging.info(f"Raw response length: {len(content)} characters")
             
             #strip markdown fences if present
+            original_content = content
             content = content.strip()
+            
             if content.startswith("```json"):
                 content = content[len("```json"):].strip()
                 if content.endswith("```"):
@@ -263,23 +292,88 @@ class GenerationService:
                     lines = lines[:-1]
                 content = '\n'.join(lines)
             
-            #validate that we have content before parsing
-            if not content.strip():
-                logging.error("Content is empty after processing")
-                raise Exception("Content is empty after processing")
+            if content != original_content:
+                logging.info("Content was modified during fence removal")
+                logging.info(f"Processed content length: {len(content)} characters")
+                logging.debug(f"Processed content:\n{content}")
+            else:
+                logging.info("No markdown fences found, content unchanged")
             
             try:
-                return json.loads(content)
+                parsed_response = json.loads(content)
+                
+                logging.info("Response structure:")
+                
+                if isinstance(parsed_response, dict):
+                    for key, value in parsed_response.items():
+                        if key == "tests":
+                            if isinstance(value, str):
+                                test_functions = len(re.findall(r'def test_', value))
+                                logging.info(f"  - {key}: {test_functions} test functions")
+                                
+                                test_names = re.findall(r'def (test_[^\(]+)', value)
+                                if test_names:
+                                    logging.info(f"    Generated test functions:")
+                                    for test_name in test_names:
+                                        logging.info(f"      - {test_name}")
+                            else:
+                                logging.info(f"  - {key}: {type(value).__name__}")
+                        elif key == "positions":
+                            if isinstance(value, list):
+                                logging.info(f"  - {key}: {len(value)} positions")
+                                for pos in value:
+                                    if isinstance(pos, dict):
+                                        name = pos.get('name', 'Unknown')
+                                        namespace = pos.get('namespace', 'Unknown')
+                                        x = pos.get('x', 0)
+                                        y = pos.get('y', 0)
+                                        logging.info(f"      - {name}/{namespace} at ({x}, {y})")
+                            else:
+                                logging.info(f"  - {key}: {type(value).__name__}")
+                        elif key == "links":
+                            if isinstance(value, list):
+                                logging.info(f"  - {key}: {len(value)} links")
+                                for link in value:
+                                    if isinstance(link, dict):
+                                        source = f"{link.get('source_name', 'Unknown')}/{link.get('source_namespace', 'Unknown')}"
+                                        target = f"{link.get('target_name', 'Unknown')}/{link.get('target_namespace', 'Unknown')}"
+                                        label = link.get('label', 'No label')
+                                        logging.info(f"      - {source} -> {target} ({label})")
+                            else:
+                                logging.info(f"  - {key}: {type(value).__name__}")
+                        else:
+                            logging.info(f"  - {key}: {type(value).__name__} - {str(value)[:100]}...")
+                else:
+                    logging.warning(f"Response is not a dictionary: {type(parsed_response)}")
+                
+                logging.info("=" * 80)
+                return parsed_response
+                
             except json.JSONDecodeError as json_err:
-                logging.error(f"Failed to parse JSON. Content: {content}")
+                logging.error("JSON parsing failed!")
+                logging.error(f"JSON Error: {json_err}")
+                logging.error(f"Error position: line {json_err.lineno}, column {json_err.colno}")
+                logging.error("Content that failed to parse:")
+                logging.error("-" * 40)
+                logging.error(content)
+                logging.error("-" * 40)
+                
+                # Try to identify the problematic area
+                lines = content.split('\n')
+                if hasattr(json_err, 'lineno') and json_err.lineno <= len(lines):
+                    problematic_line = lines[json_err.lineno - 1] if json_err.lineno > 0 else "Unknown"
+                    logging.error(f"Problematic line {json_err.lineno}: {problematic_line}")
+                
                 raise Exception(f"Invalid JSON response: {json_err}")
             
         except Exception as e:
             logging.error(f"Error calling Google AI API: {str(e)}")
+            logging.error("=" * 80)
             raise
 
     def _store_positions(self, positions: List[Dict]) -> int:
         """Update microservice coordinates"""
+        logging.info(f"Storing {len(positions)} microservice positions...")
         updated = 0
         for pos in positions:
             ms = self.db.query(Microservice).filter_by(
@@ -287,28 +381,40 @@ class GenerationService:
                 namespace=pos["namespace"]
             ).first()
             if ms:
+                logging.debug(f"Updating position for {pos['name']}/{pos['namespace']}: ({pos.get('x', 0)}, {pos.get('y', 0)})")
                 ms.x = pos.get("x", 0.0)
                 ms.y = pos.get("y", 0.0)
                 updated += 1
+            else:
+                logging.warning(f"Microservice not found for position update: {pos['name']}/{pos['namespace']}")
+        
         self.db.commit()
-        #logging.debug(f"Updated positions for {updated} microservices")
+        logging.info(f"Successfully updated positions for {updated} microservices")
         return updated
     
     def _store_links(self, links: List[Dict]) -> int:
         """Replace existing links with new ones"""
-        #self.db.query(Link).delete()  # Clear old links
+        logging.info(f"Storing {len(links)} microservice links...")
         created = 0
         for link in links:
             source = self._get_microservice(link["source_name"], link["source_namespace"])
             target = self._get_microservice(link["target_name"], link["target_namespace"])
             if source and target:
+                logging.debug(f"Creating link: {link['source_name']}/{link['source_namespace']} -> {link['target_name']}/{link['target_namespace']} ({link.get('label', 'No label')})")
                 self.db.add(Link(
                     source_id=source.id,
                     target_id=target.id,
                     label=link.get("label", "")
                 ))
                 created += 1
+            else:
+                if not source:
+                    logging.warning(f"Source microservice not found for link: {link['source_name']}/{link['source_namespace']}")
+                if not target:
+                    logging.warning(f"Target microservice not found for link: {link['target_name']}/{link['target_namespace']}")
+        
         self.db.commit()
+        logging.info(f"Successfully created {created} links")
         return created
     
     def _get_microservice(self, name: str, namespace: str) -> Microservice:
@@ -317,15 +423,18 @@ class GenerationService:
             namespace=namespace
         ).first()
         
-        #if ms:
-        #    logging.info(f"Found microservice ID: {ms.id}")
-        #else:
-        #    logging.info(f"Microservice not found: {name}/{namespace}")
+        if ms:
+            logging.debug(f"Found microservice: {name}/{namespace} (ID: {ms.id})")
+        else:
+            logging.debug(f"Microservice not found: {name}/{namespace}")
             
         return ms
         
     def _store_tests(self, test_code: str, specs: List[OpenAPISpec]) -> int:
         """Parse and store individual tests from the generated code"""
+        logging.info("Parsing and storing generated test code...")
+        logging.info(f"Test code length: {len(test_code)} characters")
+        
         #split the test code into individual test functions
         import re
         
@@ -333,10 +442,14 @@ class GenerationService:
         test_functions = re.findall(r'def (test_[^\(]+)\([^\)]*\):(.*?)(?=\n\s*def test_|\Z)', 
                                    test_code, re.DOTALL)
         
+        logging.info(f"Found {len(test_functions)} test functions in generated code")
+        
         tests_created = 0
         
         #store each test function as a separate Test record
         for test_name, test_body in test_functions:
+            logging.debug(f"Processing test function: {test_name}")
+            
             #try to determine which spec this test is for
             spec_id = None
             for spec in specs:
@@ -345,13 +458,19 @@ class GenerationService:
                 spec_name = spec_title.lower().replace(' ', '_').replace('-', '_')
                 if spec_name in test_name:
                     spec_id = spec.id
+                    logging.debug(f"  - Matched to spec ID {spec_id} ({spec_title})")
                     break
+            
+            if not spec_id:
+                logging.debug(f"  - No matching spec found for test {test_name}")
             
             #create the complete test function
             complete_test = f"def {test_name}(client):{test_body}"
             
             #extract endpoint path and method info for the test
             endpoint_info = self._extract_endpoint_info(test_name, complete_test)
+            logging.debug(f"  - Endpoint: {endpoint_info['method']} ")
+            logging.debug(f"  - Path: {endpoint_info['path']}")
             
             #store in the database
             try:
@@ -360,11 +479,12 @@ class GenerationService:
                 
                 if existing_test:
                     #update existing test
+                    logging.debug(f"  - Updating existing test: {test_name}")
                     existing_test.code = complete_test
                     existing_test.spec_id = spec_id
                 else:
                     #create new test with default values matching the requested format
-                    logging.debug(f"Creating new test: {test_name}")
+                    logging.debug(f"  - Creating new test: {test_name}")
                     new_test = Test(
                         name=test_name,
                         code=complete_test,
@@ -384,6 +504,7 @@ class GenerationService:
                 
         try:
             self.db.commit()
+            logging.info(f"Successfully stored {tests_created} tests in database")
         except Exception as e:
             self.db.rollback()
             logging.error(f"Failed to commit test changes: {str(e)}")
