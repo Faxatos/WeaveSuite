@@ -217,18 +217,25 @@ class GenerationService:
         try:
             #prompt for the LLM
             intro = (
-                "You are a QA engineer. Generate pytest tests that hit each endpoint through the API gateway. "
-                "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas. "
+                "You are a QA engineer. Generate pytest tests that hit each endpoint through the appropriate API gateway. "
+                "Name tests test_<gateway_name>_<service>_<path>_<method>, include assertions for status codes and response schemas. "
                 "IMPORTANT INSTRUCTIONS:\n"
-                "1. Analyze the provided microservices data to identify the gateway service (typically named 'gateway')\n"
-                "2. Use the gateway's configuration to route requests to the appropriate microservices\n"
-                "3. For each microservice endpoint, construct the full URL by combining the gateway base URL with the service path\n"
-                "4. All HTTP requests must go through the gateway, never directly to individual services\n"
-                "5. Extract authentication requirements from the OpenAPI specs and include proper JWT token handling\n"
-                "IMPORTANT: Return ONLY valid JSON in this exact format:\n"
+                "1. Analyze the provided microservices data to identify all gateway services (look for services with gateway-like names)\n"
+                "2. For each gateway, determine which microservices it routes to based on its OpenAPI spec configuration\n"
+                "3. Construct the full URL for each test using the gateway's endpoint and service routing:\n"
+                "   - Use the gateway's 'endpoint' field from the microservices data as the base URL (e.g., http://gateway.default.svc.cluster.local:80)\n"
+                "   - Append the service path from the gateway's routing configuration (e.g., /auth, /user, /wallet)\n"
+                "   - Final URL format: http://{gateway_endpoint}{service_path}{endpoint_path}\n"
+                "4. Each test must be linked to the correct gateway - never mix gateways or go directly to services\n"
+                "5. Extract authentication requirements from each service's OpenAPI specs and include proper handling:\n"
+                "   - Support various authentication methods (Bearer tokens, API keys, Basic auth, etc.)\n"
+                "   - Include authentication setup in test fixtures or helper methods\n"
+                "   - Handle different auth schemes per service if they vary\n"
+                "6. Return ONLY valid JSON in this exact format:\n"
                 "{\n"
                 ' "tests": "python test code here",\n'
             )
+            
             
             if include_layout: #true only when generating microservices graph
                 intro += (
