@@ -207,12 +207,17 @@ class GenerationService:
         try:
             #prompt for the LLM
             intro = (
-                "You are a QA engineer. Generate pytest tests that hit each endpoint via http://api-gateway. "
+                "You are a QA engineer. Generate pytest tests that hit each endpoint through the API gateway. "
                 "Name tests test_<service>_<path>_<method>, include assertions for status codes and response schemas. "
-                "The tests must be performed ALWAYS from the gateway endpoint, that you can find in microservices payload, taking 'endpoint' of 'service_type' = gateway. "
+                "IMPORTANT INSTRUCTIONS:\n"
+                "1. Analyze the provided microservices data to identify the gateway service (typically named 'gateway')\n"
+                "2. Use the gateway's configuration to route requests to the appropriate microservices\n"
+                "3. For each microservice endpoint, construct the full URL by combining the gateway base URL with the service path\n"
+                "4. All HTTP requests must go through the gateway, never directly to individual services\n"
+                "5. Extract authentication requirements from the OpenAPI specs and include proper JWT token handling\n"
                 "IMPORTANT: Return ONLY valid JSON in this exact format:\n"
                 "{\n"
-                '  "tests": "python test code here",\n'
+                ' "tests": "python test code here",\n'
             )
             
             if include_layout: #true only when generating microservices graph
