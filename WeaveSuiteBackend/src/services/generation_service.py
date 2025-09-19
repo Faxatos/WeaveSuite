@@ -40,6 +40,23 @@ class GenerationService:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-1.5-flash')
+
+    def _extract_microservices_info(self) -> Dict:
+        """Extract microservice information including endpoints from database"""
+        microservices = self.db.query(Microservice).all()
+        
+        microservice_info = {}
+        for ms in microservices:
+            microservice_info[str(ms.id)] = {
+                "title": ms.name.title() + " Service API",
+                "name": ms.name,
+                "namespace": ms.namespace,
+                "endpoint": ms.endpoint,
+                "service_type": ms.service_type,
+                "openapi_path": ms.openapi_path
+            }
+        
+        return microservice_info
             
     def generate_and_store_tests(self) -> Dict[str, Any]:
         """Generate tests from all OpenAPI specs and store them in the database"""
@@ -53,15 +70,8 @@ class GenerationService:
             #determine if this is the first run (no links exist yet)
             first_run = self.db.query(Link).count() == 0
                 
-            #build microservice info for the prompt
-            microservice_info = {
-                spec.id: {
-                    "title": spec.spec.get("info", {}).get("title", f"Service_{spec.id}"),
-                    "name": spec.microservice.name,
-                    "namespace": spec.microservice.namespace
-                }
-                for spec in specs
-            }
+            #microservice infos for the prompt
+            microservice_info = self._extract_microservices_info()
 
             #generate via LLM!
             response_data = self._generate_with_llm(microservice_info, specs, first_run)
