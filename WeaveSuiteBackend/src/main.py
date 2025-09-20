@@ -21,8 +21,6 @@ async def startup_event():
         #initial discovery on startup
         DiscoveryService(db).discover_microservices()
         SpecService(db).fetch_and_store_specs()
-        #generate tests after specs are stored
-        GenerationService(db).generate_and_store_tests()
     finally:
         db.close()
 
