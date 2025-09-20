@@ -457,33 +457,81 @@ class GenerationService:
         logging.info("Parsing and storing generated test code...")
         logging.info(f"Test code length: {len(test_code)} characters")
         
-        #split the test code into individual test functions
-        import re
-        
         #find all test functions in the code
-        test_functions = re.findall(r'def (test_[^\(]+)\([^\)]*\):(.*?)(?=\n\s*def test_|\Z)', 
+        test_functions = re.findall(r'def (test_[^\(]+)\([^\)]*\):(.*?)(?=\n\s*def test_|\Z)',
                                    test_code, re.DOTALL)
         
         logging.info(f"Found {len(test_functions)} test functions in generated code")
         
+        #create a mapping from microservice names to their OpenAPI specs by querying the database relationships
+        microservice_to_specs = {}
+        
+        #get all microservices and their associated specs
+        microservices = self.db.query(Microservice).all()
+        
+        for microservice in microservices:
+            service_name = microservice.name.lower()
+            microservice_specs = []
+            
+            #get all specs for this microservice
+            for spec in microservice.specs:
+                if spec.id in [s.id for s in specs]:  #only include specs that are in our current specs list
+                    microservice_specs.append({
+                        'spec_id': spec.id,
+                        'microservice_name': microservice.name,
+                        'microservice_id': microservice.id,
+                        'namespace': microservice.namespace,
+                        'spec_title': spec.spec.get('info', {}).get('title', 'Unknown'),
+                        'paths': list(spec.spec.get('paths', {}).keys())
+                    })
+            
+            if microservice_specs:
+                microservice_to_specs[service_name] = microservice_specs
+                logging.debug(f"Microservice '{microservice.name}' -> {len(microservice_specs)} spec(s)")
+        
+        logging.debug(f"Available microservices: {list(microservice_to_specs.keys())}")
+        
         tests_created = 0
+        tests_updated= 0
         
         #store each test function as a separate Test record
         for test_name, test_body in test_functions:
             logging.debug(f"Processing test function: {test_name}")
             
-            #try to determine which spec this test is for
             spec_id = None
-            for spec in specs:
-                spec_title = spec.spec.get('info', {}).get('title', '')
-                
-                spec_name = spec_title.lower().replace(' ', '_').replace('-', '_')
-                if spec_name in test_name:
-                    spec_id = spec.id
-                    logging.debug(f"  - Matched to spec ID {spec_id} ({spec_title})")
-                    break
+            match_reason = None
             
-            if not spec_id:
+            #extract service name from test name pattern: test_<gateway_name>_<service>_<path>_<method>
+            test_parts = test_name.split('_')
+            
+            if len(test_parts) >= 3:
+                service_name = test_parts[2].lower()  #extract service name and normalize case
+                
+                logging.debug(f"  - Extracted service name: '{service_name}'")
+                
+                #direct microservice name matching
+                if service_name in microservice_to_specs:
+                    candidates = microservice_to_specs[service_name]
+                    
+                    if len(candidates) == 1:
+                        spec_id = candidates[0]['spec_id']
+                        match_reason = f"microservice '{service_name}' -> spec {spec_id}"
+                        logging.debug(f"  - {match_reason}")
+                    else:
+                        #multiple specs for the same microservice, use the most recent one
+                        latest_spec = max(candidates, key=lambda c: c['spec_id'])  #higher ID = more recent
+                        spec_id = latest_spec['spec_id']
+                        match_reason = f"microservice '{service_name}' -> latest spec {spec_id} (out of {len(candidates)} specs)"
+                        logging.debug(f"  - {match_reason}")
+                else:
+                    logging.debug(f"  - No microservice found with name '{service_name}'")
+                    logging.debug(f"  - Available microservices: {list(microservice_to_specs.keys())}")
+            else:
+                logging.debug(f"  - Could not parse service name from test name: {test_name}")
+            
+            if spec_id:
+                logging.debug(f"  - Matched to spec ID {spec_id} ({match_reason})")
+            else:
                 logging.debug(f"  - No matching spec found for test {test_name}")
             
             #create the complete test function
@@ -498,12 +546,17 @@ class GenerationService:
             try:
                 #check if test already exists
                 existing_test = self.db.query(Test).filter_by(name=test_name).first()
-                
                 if existing_test:
                     #update existing test
                     logging.debug(f"  - Updating existing test: {test_name}")
                     existing_test.code = complete_test
                     existing_test.spec_id = spec_id
+                    existing_test.status = "pending"
+                    existing_test.last_execution = None
+                    existing_test.execution_time = 0
+                    existing_test.error_message = None
+                    existing_test.services_visited = json.dumps([])
+                    tests_updated += 1
                 else:
                     #create new test with default values matching the requested format
                     logging.debug(f"  - Creating new test: {test_name}")
@@ -518,18 +571,16 @@ class GenerationService:
                         services_visited=json.dumps([])  #empty array as JSON string
                     )
                     self.db.add(new_test)
-                
-                tests_created += 1
-                
+                    tests_created += 1
             except Exception as e:
                 logging.error(f"Failed to store test {test_name}: {str(e)}")
-                
+        
         try:
             self.db.commit()
-            logging.info(f"Successfully stored {tests_created} tests in database")
+            logging.info(f"Successfully stored {tests_created} / updated {tests_updated} tests in database")
         except Exception as e:
             self.db.rollback()
             logging.error(f"Failed to commit test changes: {str(e)}")
             raise
-            
+        
         return tests_created
