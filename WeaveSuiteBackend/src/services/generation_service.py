@@ -11,7 +11,7 @@ from typing import List, Dict, Any
 import google.generativeai as genai
 from sqlalchemy.orm import Session
 
-from db.models import OpenAPISpec, Test, Microservice, Link
+from db.models import OpenAPISpec, Test, Microservice, Link, TestTemplate
 
 #logging config
 logging.basicConfig(
@@ -57,6 +57,60 @@ class GenerationService:
             }
         
         return microservice_info
+    
+    def _extract_template_from_response(self, test_code: str) -> str:
+        """Extract everything before the first test function as template"""
+        
+        #find the first test function
+        first_test_match = re.search(r'\ndef test_', test_code)
+        
+        if first_test_match:
+            #extract everything before the first test function
+            template_code = test_code[:first_test_match.start()].strip()
+            logging.info(f"Template content preview:\n{template_code[:500]}...")
+            return template_code
+        else:
+            logging.warning("No test functions found in response, using empty template")
+            return ""
+        
+    def _store_template(self, template_code: str, template_name: str = "default") -> int:
+        """Store or update the extracted template and return template ID"""
+        
+        if not template_code.strip():
+            logging.warning("Empty template code, skipping storage")
+            return None
+        
+        #check if template already exists
+        existing_template = self.db.query(TestTemplate).filter_by(name=template_name).first()
+        
+        if existing_template:
+            #check if content is different
+            if existing_template.template_code != template_code:
+                logging.info(f"Updating existing template '{template_name}'")
+                existing_template.template_code = template_code
+                template_id = existing_template.id
+            else:
+                logging.info(f"Template '{template_name}' unchanged, skipping update")
+                template_id = existing_template.id
+        else:
+            #create new template
+            logging.info(f"Creating new template '{template_name}'")
+            new_template = TestTemplate(
+                name=template_name,
+                template_code=template_code
+            )
+            self.db.add(new_template)
+            self.db.flush()
+            template_id = new_template.id
+        
+        try:
+            self.db.commit()
+            logging.info(f"Template '{template_name}' stored successfully with ID {template_id}")
+            return template_id
+        except Exception as e:
+            self.db.rollback()
+            logging.error(f"Failed to store template: {str(e)}")
+            raise
             
     def generate_and_store_tests(self) -> Dict[str, Any]:
         """Generate tests from all OpenAPI specs and store them in the database"""
@@ -76,8 +130,20 @@ class GenerationService:
             #generate via LLM!
             response_data = self._generate_with_llm(microservice_info, specs, first_run)
             
-            tests_created = self._store_tests(response_data.get("tests", ""), specs)
+            #extract and store template from LLM response
+            test_code = response_data.get("tests", "")
+            template_id = None
+            
+            if test_code:
+                template_code = self._extract_template_from_response(test_code)
+                if template_code:
+                    template_id = self._store_template(template_code)
+            
+            tests_created = self._store_tests(test_code, specs, template_id)
             result = {"status": "success", "tests_created": tests_created}
+
+            if template_id:
+                result["template_id"] = template_id
 
             if first_run:
                 positions_updated = self._store_positions(response_data.get("positions", []))
@@ -288,7 +354,7 @@ class GenerationService:
                 full_prompt,
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.2,
-                    max_output_tokens=4000,
+                    max_output_tokens=8000,
                 )
             )
 
@@ -452,21 +518,48 @@ class GenerationService:
             
         return ms
         
-    def _store_tests(self, test_code: str, specs: List[OpenAPISpec]) -> int:
+    def _store_tests(self, test_code: str, specs: List[OpenAPISpec], template_id: int = None) -> int:
         """Parse and store individual tests from the generated code"""
         logging.info("Parsing and storing generated test code...")
         logging.info(f"Test code length: {len(test_code)} characters")
         
-        #find all test functions in the code
-        test_functions = re.findall(r'def (test_[^\(]+)\([^\)]*\):(.*?)(?=\n\s*def test_|\Z)',
-                                   test_code, re.DOTALL)
+        #remove the template part first
+        first_test_match = re.search(r'\ndef test_', test_code)
+        if first_test_match:
+            test_functions_code = test_code[first_test_match.start():].strip()
+        else:
+            test_functions_code = test_code
+        
+        #find all test functions with their complete bodies
+        test_pattern = r'def (test_[^\(]+)\([^\)]*\):(.*?)(?=\ndef test_|\ndef \w+|\Z)'
+        test_matches = re.findall(test_pattern, test_functions_code, re.DOTALL)
+        
+        #clean up function bodies and create complete function definitions
+        test_functions = []
+        for test_name, test_body in test_matches:
+            #clean the test body (remove leading whitespace, ensure proper indentation)
+            lines = test_body.strip().split('\n')
+            cleaned_lines = []
+            for line in lines:
+                if line.strip():
+                    #ensure proper indentation (4 spaces)
+                    if not line.startswith('    '):
+                        cleaned_lines.append('    ' + line.lstrip())
+                    else:
+                        cleaned_lines.append(line)
+                else:
+                    cleaned_lines.append('')
+            
+            #reconstruct the complete function
+            complete_function = f"def {test_name}():\n" + '\n'.join(cleaned_lines)
+            test_functions.append((test_name, complete_function))
+            
+            logging.debug(f"Extracted test function: {test_name}")
         
         logging.info(f"Found {len(test_functions)} test functions in generated code")
         
-        #create a mapping from microservice names to their OpenAPI specs by querying the database relationships
+        #create a mapping from microservice names to their OpenAPI specs
         microservice_to_specs = {}
-        
-        #get all microservices and their associated specs
         microservices = self.db.query(Microservice).all()
         
         for microservice in microservices:
@@ -475,7 +568,7 @@ class GenerationService:
             
             #get all specs for this microservice
             for spec in microservice.specs:
-                if spec.id in [s.id for s in specs]:  #only include specs that are in our current specs list
+                if spec.id in [s.id for s in specs]:
                     microservice_specs.append({
                         'spec_id': spec.id,
                         'microservice_name': microservice.name,
@@ -492,20 +585,20 @@ class GenerationService:
         logging.debug(f"Available microservices: {list(microservice_to_specs.keys())}")
         
         tests_created = 0
-        tests_updated= 0
+        tests_updated = 0
         
         #store each test function as a separate Test record
-        for test_name, test_body in test_functions:
+        for test_name, complete_test in test_functions:
             logging.debug(f"Processing test function: {test_name}")
             
             spec_id = None
             match_reason = None
             
-            #extract service name from test name pattern: test_<gateway_name>_<service>_<path>_<method>
+            #extract service name from test name pattern
             test_parts = test_name.split('_')
             
             if len(test_parts) >= 3:
-                service_name = test_parts[2].lower()  #extract service name and normalize case
+                service_name = test_parts[2].lower()
                 
                 logging.debug(f"  - Extracted service name: '{service_name}'")
                 
@@ -519,13 +612,12 @@ class GenerationService:
                         logging.debug(f"  - {match_reason}")
                     else:
                         #multiple specs for the same microservice, use the most recent one
-                        latest_spec = max(candidates, key=lambda c: c['spec_id'])  #higher ID = more recent
+                        latest_spec = max(candidates, key=lambda c: c['spec_id'])
                         spec_id = latest_spec['spec_id']
                         match_reason = f"microservice '{service_name}' -> latest spec {spec_id} (out of {len(candidates)} specs)"
                         logging.debug(f"  - {match_reason}")
                 else:
                     logging.debug(f"  - No microservice found with name '{service_name}'")
-                    logging.debug(f"  - Available microservices: {list(microservice_to_specs.keys())}")
             else:
                 logging.debug(f"  - Could not parse service name from test name: {test_name}")
             
@@ -533,14 +625,6 @@ class GenerationService:
                 logging.debug(f"  - Matched to spec ID {spec_id} ({match_reason})")
             else:
                 logging.debug(f"  - No matching spec found for test {test_name}")
-            
-            #create the complete test function
-            complete_test = f"def {test_name}(client):{test_body}"
-            
-            #extract endpoint path and method info for the test
-            endpoint_info = self._extract_endpoint_info(test_name, complete_test)
-            logging.debug(f"  - Endpoint: {endpoint_info['method']} ")
-            logging.debug(f"  - Path: {endpoint_info['path']}")
             
             #store in the database
             try:
@@ -551,6 +635,7 @@ class GenerationService:
                     logging.debug(f"  - Updating existing test: {test_name}")
                     existing_test.code = complete_test
                     existing_test.spec_id = spec_id
+                    existing_test.template_id = template_id
                     existing_test.status = "pending"
                     existing_test.last_execution = None
                     existing_test.execution_time = 0
@@ -558,17 +643,18 @@ class GenerationService:
                     existing_test.services_visited = json.dumps([])
                     tests_updated += 1
                 else:
-                    #create new test with default values matching the requested format
+                    #create new test
                     logging.debug(f"  - Creating new test: {test_name}")
                     new_test = Test(
                         name=test_name,
                         code=complete_test,
                         spec_id=spec_id,
+                        template_id=template_id,
                         status="pending",
                         last_execution=None,
                         execution_time=0,
                         error_message=None,
-                        services_visited=json.dumps([])  #empty array as JSON string
+                        services_visited=json.dumps([])
                     )
                     self.db.add(new_test)
                     tests_created += 1
@@ -577,7 +663,7 @@ class GenerationService:
         
         try:
             self.db.commit()
-            logging.info(f"Successfully stored {tests_created} / updated {tests_updated} tests in database")
+            logging.info(f"Successfully stored {tests_created} new tests / updated {tests_updated} tests in database")
         except Exception as e:
             self.db.rollback()
             logging.error(f"Failed to commit test changes: {str(e)}")
