@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Float, DateTime, Integer, String, JSON, ForeignKey, UniqueConstraint, JSON, Index
+from sqlalchemy.types import Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from db.database import Base
@@ -51,7 +52,7 @@ class Test(Base):
     __tablename__ = "tests"
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    code = Column(String)  #generated test code
+    code = Column(Text)  #generated test code
     spec_id = Column(Integer, ForeignKey("openapi_specs.id"))  #link to OpenAPI spec
     spec = relationship("OpenAPISpec")
     last_execution = Column(DateTime, nullable=True)
