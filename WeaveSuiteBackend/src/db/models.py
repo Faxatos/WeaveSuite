@@ -60,6 +60,15 @@ class Test(Base):
     error_message = Column(String, nullable=True)
     services_visited = Column(JSON, nullable=True)  # JSON array as string
     proxy_failures = relationship("TestProxyFailure", back_populates="test", cascade="all, delete-orphan", passive_deletes=True)
+    template = relationship("TestTemplate", back_populates="tests")
+
+class TestTemplate(Base):
+    __tablename__ = "test_templates"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
+    template_code = Column(Text, nullable=False)  #code that comes before test functions
+    
+    tests = relationship("Test", back_populates="template")
 
 class TestProxyFailure(Base):
     __tablename__ = "test_proxy_failures"
