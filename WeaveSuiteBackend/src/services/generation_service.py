@@ -67,7 +67,7 @@ class GenerationService:
         if first_test_match:
             #extract everything before the first test function
             template_code = test_code[:first_test_match.start()].strip()
-            logging.info(f"Template content preview:\n{template_code[:500]}...")
+            logging.info(f"Template content:\n{template_code}")
             return template_code
         else:
             logging.warning("No test functions found in response, using empty template")
