@@ -54,6 +54,7 @@ class Test(Base):
     name = Column(String)
     code = Column(Text)  #generated test code
     spec_id = Column(Integer, ForeignKey("openapi_specs.id"))  #link to OpenAPI spec
+    template_id = Column(Integer, ForeignKey("test_templates.id"), nullable=True)
     spec = relationship("OpenAPISpec")
     last_execution = Column(DateTime, nullable=True)
     status = Column(String, nullable=True)  # passed, failed, skipped, error
