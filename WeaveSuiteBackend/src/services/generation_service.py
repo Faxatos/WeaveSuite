@@ -8,7 +8,8 @@ import re
 from datetime import datetime
 from typing import List, Dict, Any
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from sqlalchemy.orm import Session
 
 from db.models import OpenAPISpec, Test, Microservice, Link, TestTemplate
@@ -38,8 +39,8 @@ class GenerationService:
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.client = genai.Client(api_key=api_key)
+        self.model_name = 'gemini-2.5-pro'
 
     def _extract_microservices_info(self) -> Dict:
         """Extract microservice information including endpoints from database"""
@@ -295,7 +296,7 @@ class GenerationService:
                 "   - Final URL format: http://{gateway_endpoint}{service_path}{endpoint_path}\n"
                 "4. Each test must be linked to the correct gateway - never mix gateways or go directly to services\n"
                 "5. Extract authentication requirements from each service's OpenAPI specs and include proper handling:\n"
-                "   - Support various authentication methods (Bearer tokens, API keys, Basic auth, etc.)\n"
+                "   - Support various authentication methods (Bearer tokens, API keys, Basic auth, etc.), create authentication functions that obtain real tokens from login endpoints\n"
                 "   - Include authentication setup for tokens/sessions in test fixtures or helper methods, make sure test functions that require fixtures accepts them as parameters\n"
                 "   - Handle different auth schemes per service if they vary\n"
                 "   - Include meaningful random test data"
@@ -352,12 +353,15 @@ class GenerationService:
             logging.debug(f"Full prompt content:\n{full_prompt}")
 
             #generate content using Google AI
-            response = self.model.generate_content(
-                full_prompt,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=0.2,
-                    max_output_tokens=8000,
-                )
+            config = types.GenerateContentConfig(
+                temperature=0.2,
+                max_output_tokens=12000,
+            )
+
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_prompt,
+                config=config
             )
 
             content = response.text
