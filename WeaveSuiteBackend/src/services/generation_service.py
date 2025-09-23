@@ -538,13 +538,13 @@ class GenerationService:
         else:
             test_functions_code = test_code
         
-        #find all test functions with their complete bodies
-        test_pattern = r'def (test_[^\(]+)\([^\)]*\):(.*?)(?=\ndef test_|\ndef \w+|\Z)'
+        #capture the complete function signature including parameters
+        test_pattern = r'def (test_[^\(]+)(\([^\)]*\)):(.*?)(?=\ndef test_|\ndef \w+|\Z)'
         test_matches = re.findall(test_pattern, test_functions_code, re.DOTALL)
         
         #clean up function bodies and create complete function definitions
         test_functions = []
-        for test_name, test_body in test_matches:
+        for test_name, test_params, test_body in test_matches:
             #clean the test body (remove leading whitespace, ensure proper indentation)
             lines = test_body.strip().split('\n')
             cleaned_lines = []
@@ -558,11 +558,11 @@ class GenerationService:
                 else:
                     cleaned_lines.append('')
             
-            #reconstruct the complete function
-            complete_function = f"def {test_name}():\n" + '\n'.join(cleaned_lines)
+            #preserve the original parameters when reconstructing the function
+            complete_function = f"def {test_name}{test_params}:\n" + '\n'.join(cleaned_lines)
             test_functions.append((test_name, complete_function))
             
-            logging.debug(f"Extracted test function: {test_name}")
+            logging.debug(f"Extracted test function: {test_name}{test_params}")
         
         logging.info(f"Found {len(test_functions)} test functions in generated code")
         
