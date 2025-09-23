@@ -327,7 +327,6 @@ class GenerationService:
             full_prompt = f"{intro}\n\nData: {json.dumps(payload)}"
 
             #complete prompt being sent to LLM
-            logging.info(f"Prompt intro: {intro}")
             logging.info(f"Payload summary:")
             logging.info(f"  - Microservices count: {len(payload['microservices'])}")
             logging.info(f"  - OpenAPI specs count: {len(payload['openapi_specs'])}")
@@ -352,6 +351,7 @@ class GenerationService:
                             logging.info(f"    - {method.upper()} {path}")
 
             logging.info(f"Full prompt length: {len(full_prompt)} characters")
+            logging.info(f"Full prompt:\n{full_prompt}")
 
             #generate content using Google AI
             config = types.GenerateContentConfig(

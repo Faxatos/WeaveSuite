@@ -413,20 +413,23 @@ class TestService:
         """Extract execution time from pytest output"""
         try:
             time_patterns = [
-                r'(\d+)\s+(?:passed|failed|error|passed,\s*\d+\s*failed|failed,\s*\d+\s*passed)\s+in\s+([\d.]+)s',
-                r'in\s+([\d.]+)s',  # fallback pattern
+                r'(\d+)\s+(?:passed|failed|error)(?:,\s*\d+\s*(?:passed|failed|error))?\s+in\s+([\d.]+)s',
+                r'in\s+([\d.]+)s',
             ]
             
-            for pattern in time_patterns:
+            for i, pattern in enumerate(time_patterns):
                 match = re.search(pattern, stdout, re.IGNORECASE)
                 if match:
-                    # If the pattern captures execution time as the last group
-                    time_str = match.group(-1)  # Get the last captured group
                     try:
+                        if i == 0 and len(match.groups()) >= 2:
+                            time_str = match.group(2)
+                        else:
+                            time_str = match.group(1)
+                        
                         execution_time = float(time_str)
-                        logging.debug(f"Extracted pytest execution time: {execution_time}s")
                         return execution_time
-                    except ValueError:
+                    except (ValueError, IndexError) as e:
+                        logging.debug(f"Failed to extract time from match: {e}")
                         continue
             
             logging.debug("Could not extract execution time from pytest output, defaulting to 0")
