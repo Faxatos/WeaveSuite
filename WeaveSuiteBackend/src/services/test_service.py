@@ -138,7 +138,6 @@ class TestService:
 
             try:
                 for test in tests:
-                    logging.info(f"Executing test: {test.name}")
                     result = self.execute_single_test(test.id)
                     results.append(result)
                     
@@ -192,12 +191,7 @@ class TestService:
                 return {"status": "error", "test_id": test_id, "test_name": test.name, "message": error_msg}
 
             #execute the test
-            start_time = time.time()
             execution_results = self._execute_pytest_on_code(complete_test_code, test.name)
-            execution_time = time.time() - start_time
-
-            #add execution time to results
-            execution_results["execution_time"] = execution_time
 
             #update database with results
             self._update_test_results(test, execution_results)
@@ -206,12 +200,12 @@ class TestService:
                 "status": execution_results["status"],
                 "test_id": test_id,
                 "test_name": test.name,
-                "execution_time": execution_time,
+                "execution_time": execution_results.get("execution_time", 0),
                 "message": execution_results.get("error_message", "")
             }
 
             if execution_results["status"] == "passed":
-                logging.info(f"Test {test.name} PASSED in {execution_time:.2f}s")
+                logging.info(f"Test {test.name} PASSED in {execution_results.get('execution_time', 0):.2f}s")
             else:
                 logging.warning(f"Test {test.name} {execution_results['status'].upper()}: {execution_results.get('error_message', '')}")
 
@@ -318,7 +312,6 @@ class TestService:
             if temp_file_path and os.path.exists(temp_file_path):
                 try:
                     os.unlink(temp_file_path)
-                    logging.debug(f"Cleaned up temporary file: {temp_file_path}")
                 except Exception as e:
                     logging.warning(f"Failed to clean up temporary file {temp_file_path}: {str(e)}")
 
@@ -348,8 +341,13 @@ class TestService:
             #default result
             result = {
                 "status": "error",
-                "error_message": "Unknown error"
+                "error_message": "Unknown error",
+                "execution_time": 0
             }
+
+            #extract execution time from pytest output
+            execution_time = self._extract_pytest_execution_time(stdout)
+            result["execution_time"] = execution_time
 
             #check return code first
             if return_code == 0:
@@ -407,8 +405,36 @@ class TestService:
             logging.error(f"Failed to parse pytest output: {str(e)}")
             return {
                 "status": "error",
-                "error_message": f"Failed to parse test results: {str(e)}"
+                "error_message": f"Failed to parse test results: {str(e)}",
+                "execution_time": 0
             }
+    
+    def _extract_pytest_execution_time(self, stdout: str) -> float:
+        """Extract execution time from pytest output"""
+        try:
+            time_patterns = [
+                r'(\d+)\s+(?:passed|failed|error|passed,\s*\d+\s*failed|failed,\s*\d+\s*passed)\s+in\s+([\d.]+)s',
+                r'in\s+([\d.]+)s',  # fallback pattern
+            ]
+            
+            for pattern in time_patterns:
+                match = re.search(pattern, stdout, re.IGNORECASE)
+                if match:
+                    # If the pattern captures execution time as the last group
+                    time_str = match.group(-1)  # Get the last captured group
+                    try:
+                        execution_time = float(time_str)
+                        logging.debug(f"Extracted pytest execution time: {execution_time}s")
+                        return execution_time
+                    except ValueError:
+                        continue
+            
+            logging.debug("Could not extract execution time from pytest output, defaulting to 0")
+            return 0.0
+            
+        except Exception as e:
+            logging.warning(f"Error extracting pytest execution time: {str(e)}")
+            return 0.0
 
     def _update_test_results(self, test: Test, results: Dict[str, Any]):
         """Update test record with execution results"""
@@ -423,7 +449,6 @@ class TestService:
                 test.services_visited = json.dumps([])
 
             self.db.commit()
-            logging.debug(f"Updated test {test.name} with status: {test.status}")
 
         except Exception as e:
             self.db.rollback()
