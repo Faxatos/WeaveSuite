@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from db.database import get_db
-from db.models import Link 
+from db.models import Link
 from services.discovery_service import DiscoveryService
 from services.spec_service import SpecService
 from services.generation_service import GenerationService
@@ -29,6 +29,29 @@ async def startup_event():
             GenerationService(db).generate_and_store_tests()
     finally:
         db.close()
+
+@app.get("/api/specs")
+async def get_openapi_specs(db: Session = Depends(get_db)):
+    """Get all OpenAPI specifications with their microservice details"""
+    try:
+        specs = DiscoveryService(db).get_openapi_specs()
+        
+        if not specs:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No OpenAPI specifications available"
+            )
+        
+        return {"specs": specs}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error retrieving OpenAPI specs: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve OpenAPI specs: {str(e)}"
+        )
 
 @app.post("/api/update-specs")
 async def trigger_update(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):

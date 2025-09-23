@@ -281,3 +281,47 @@ class DiscoveryService:
         except Exception as e:
             logging.error(f"Failed to get service map: {str(e)}")
             raise
+
+    def get_openapi_specs(self):
+        """Get all OpenAPI specifications with their microservice details"""
+        try:
+            from db.models import OpenAPISpec, Microservice
+            
+            specs_query = self.db.query(OpenAPISpec).join(Microservice).all()
+            
+            if not specs_query:
+                return []
+            
+            specs_data = []
+            for spec in specs_query:
+                spec_status = "available"
+                try:
+                    if not spec.spec or not isinstance(spec.spec, dict):
+                        spec_status = "error"
+                    elif "openapi" not in spec.spec and "swagger" not in spec.spec:
+                        spec_status = "error"
+                    elif not spec.spec.get("paths"):
+                        spec_status = "unavailable"
+                except Exception:
+                    spec_status = "error"
+                
+                spec_data = {
+                    "id": spec.id,
+                    "spec": spec.spec,
+                    "fetched_at": spec.fetched_at.isoformat() if spec.fetched_at else None,
+                    "microservice_id": spec.microservice_id,
+                    "microservice": {
+                        "id": spec.microservice.id,
+                        "name": spec.microservice.name,
+                        "url": spec.microservice.url,
+                        "version": getattr(spec.microservice, 'version', None)
+                    },
+                    "status": spec_status
+                }
+                specs_data.append(spec_data)
+            
+            return specs_data
+            
+        except Exception as e:
+            logging.error(f"Error retrieving OpenAPI specs: {str(e)}")
+            raise Exception(f"Failed to retrieve OpenAPI specs: {str(e)}")
