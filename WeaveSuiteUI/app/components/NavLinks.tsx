@@ -2,7 +2,8 @@
 
 import {
   HomeIcon,
-  BeakerIcon
+  BeakerIcon,
+  Bars3CenterLeftIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -12,6 +13,7 @@ import clsx from 'clsx';
 const links = [
   { name: 'Microservices', href: '/', icon: HomeIcon },
   { name: 'System Tests', href: '/tests', icon: BeakerIcon },
+  { name: 'OpenAPI Spec', href: '/specs', icon: Bars3CenterLeftIcon },
 ];
 
 export default function NavLinks() {
