@@ -32,7 +32,6 @@ interface ApiResponse<T> {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const action = searchParams.get('action') || 'getTests';
-  
   const response: ApiResponse<TestData[] | unknown> = { data: null };
   let status = 200;
 
@@ -40,16 +39,12 @@ export async function GET(req: Request) {
     if (action === 'getTests') {
       const testsData = await fetchTestsData();
       response.data = testsData;
-    } else if (action === 'runTests') {
-      const runResult = await triggerTestRun();
-      response.data = runResult;
     } else {
       status = 400;
-      response.error = 'Invalid action parameter';
+      response.error = 'Invalid action parameter for GET request';
     }
   } catch (error) {
     console.error('Error in tests API:', error);
-    
     // Handle specific error types differently
     if (error instanceof Error) {
       if (error.message.includes('No test data available')) {
@@ -71,31 +66,100 @@ export async function GET(req: Request) {
   return NextResponse.json(response, { status });
 }
 
-// Fetch the test data from the Python backend
+export async function POST(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get('action');
+  const response: ApiResponse<unknown> = { data: null };
+  let status = 200;
+
+  try {
+    if (action === 'executeTests') {
+      const result = await executeAllTests();
+      response.data = result;
+    } else if (action === 'executeTest') {
+      const body = await req.json();
+      const testId = body.testId;
+      if (!testId) {
+        status = 400;
+        response.error = 'Test ID is required';
+      } else {
+        const result = await executeSingleTest(testId);
+        response.data = result;
+      }
+    } else if (action === 'generateTests') {
+      const result = await generateTests();
+      response.data = result;
+    } else {
+      status = 400;
+      response.error = 'Invalid action parameter for POST request';
+    }
+  } catch (error) {
+    console.error('Error in tests API:', error);
+    // Handle specific error types differently
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        status = 404;
+        response.error = error.message;
+      } else {
+        status = 500;
+        response.error = error.message || 'Server error occurred';
+      }
+    } else {
+      status = 500;
+      response.error = 'Server error occurred';
+    }
+  }
+
+  return NextResponse.json(response, { status });
+}
+
+//fetch the test data from the Python backend
 async function fetchTestsData(): Promise<TestData[]> {
   try {
     const response = await axios.get(`${API_BASE_URL}/api/system-tests`);
-    return response.data as TestData[];
+    return response.data.tests as TestData[];
   } catch (error) {
     console.error('Error fetching test data from backend:', error);
-    
-    // Check if this is a 404 error (no tests found)
+    //check if this is a 404 error (no tests found)
     if (axios.isAxiosError(error as AxiosError) && (error as AxiosError).response?.status === 404) {
       throw new Error('No test data available. No tests have been defined or run.');
     }
-    
-    // For other errors
     throw new Error('Failed to connect to testing backend.');
   }
 }
 
-// Trigger the test run process on the backend
-async function triggerTestRun(): Promise<unknown> {
+//execute all tests on the backend
+async function executeAllTests(): Promise<unknown> {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/run-tests`);
+    const response = await axios.post(`${API_BASE_URL}/api/execute-tests`);
     return response.data;
   } catch (error) {
-    console.error('Error triggering test run:', error);
-    throw new Error('Failed to trigger test execution.');
+    console.error('Error executing all tests:', error);
+    throw new Error('Failed to execute all tests.');
+  }
+}
+
+// Execute a single test by ID
+async function executeSingleTest(testId: number): Promise<unknown> {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/execute-test/${testId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error executing test ${testId}:`, error);
+    if (axios.isAxiosError(error as AxiosError) && (error as AxiosError).response?.status === 404) {
+      throw new Error(`Test with ID ${testId} not found`);
+    }
+    throw new Error(`Failed to execute test ${testId}.`);
+  }
+}
+
+// Generate tests from OpenAPI specs
+async function generateTests(): Promise<unknown> {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/generate-tests`);
+    return response.data;
+  } catch (error) {
+    console.error('Error generating tests:', error);
+    throw new Error('Failed to generate tests.');
   }
 }
