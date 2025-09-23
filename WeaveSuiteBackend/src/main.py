@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from db.database import get_db
+from db.models import Link 
 from services.discovery_service import DiscoveryService
 from services.spec_service import SpecService
 from services.generation_service import GenerationService
@@ -21,6 +22,11 @@ async def startup_event():
         #initial discovery on startup
         DiscoveryService(db).discover_microservices()
         SpecService(db).fetch_and_store_specs()
+        
+        #generate tests on first execution
+        links = db.query(Link).all()
+        if not links:
+            GenerationService(db).generate_and_store_tests()
     finally:
         db.close()
 
