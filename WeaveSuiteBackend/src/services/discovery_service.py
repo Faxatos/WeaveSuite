@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import exc
 import logging
 
-from typing import Dict, List, Any
+from typing import Dict, Any
 
-from db.models import Microservice, Link
+from db.models import Microservice, Link, OpenAPISpec
 
 class DiscoveryService:
     def __init__(self, db: Session):
@@ -286,42 +286,72 @@ class DiscoveryService:
         """Get all OpenAPI specifications with their microservice details"""
         try:
             from db.models import OpenAPISpec, Microservice
+            import logging
             
             specs_query = self.db.query(OpenAPISpec).join(Microservice).all()
             
+            logging.info(f"Found {len(specs_query)} OpenAPI specs in database")
+            
             if not specs_query:
+                logging.info("No OpenAPI specs found in database")
                 return []
             
             specs_data = []
             for spec in specs_query:
-                spec_status = "available"
                 try:
+                    #determine status based on spec validity
+                    spec_status = "available"
+                    
                     if not spec.spec or not isinstance(spec.spec, dict):
                         spec_status = "error"
+                        logging.warning(f"Spec {spec.id} has invalid spec data")
+                    #check for Swagger UI configuration (like API gateways)
+                    elif "urls" in spec.spec and isinstance(spec.spec.get("urls"), list):
+                        spec_status = "available"  #Swagger UI config is valid
+                        logging.info(f"Spec {spec.id} is a Swagger UI configuration")
                     elif "openapi" not in spec.spec and "swagger" not in spec.spec:
                         spec_status = "error"
+                        logging.warning(f"Spec {spec.id} missing OpenAPI/Swagger field")
                     elif not spec.spec.get("paths"):
                         spec_status = "unavailable"
-                except Exception:
-                    spec_status = "error"
-                
-                spec_data = {
-                    "id": spec.id,
-                    "spec": spec.spec,
-                    "fetched_at": spec.fetched_at.isoformat() if spec.fetched_at else None,
-                    "microservice_id": spec.microservice_id,
-                    "microservice": {
-                        "id": spec.microservice.id,
-                        "name": spec.microservice.name,
-                        "url": spec.microservice.url,
-                        "version": getattr(spec.microservice, 'version', None)
-                    },
-                    "status": spec_status
-                }
-                specs_data.append(spec_data)
+                        logging.warning(f"Spec {spec.id} has no paths defined")
+                    
+                    spec_data = {
+                        "id": spec.id,
+                        "spec": spec.spec,
+                        "fetched_at": spec.fetched_at.isoformat() if spec.fetched_at else None,
+                        "microservice_id": spec.microservice_id,
+                        "microservice": {
+                            "id": spec.microservice.id,
+                            "name": spec.microservice.name,
+                            "url": spec.microservice.endpoint,  
+                            "version": getattr(spec.microservice, 'service_type', None)  
+                        },
+                        "status": spec_status
+                    }
+                    specs_data.append(spec_data)
+                    logging.info(f"Successfully processed spec {spec.id} for microservice {spec.microservice.name}")
+                    
+                except Exception as e:
+                    logging.error(f"Error processing spec {spec.id}: {str(e)}")
+                    spec_data = {
+                        "id": spec.id,
+                        "spec": {},
+                        "fetched_at": spec.fetched_at.isoformat() if spec.fetched_at else None,
+                        "microservice_id": spec.microservice_id,
+                        "microservice": {
+                            "id": spec.microservice.id,
+                            "name": spec.microservice.name,
+                            "url": spec.microservice.endpoint,
+                            "version": getattr(spec.microservice, 'service_type', None)
+                        },
+                        "status": "error"
+                    }
+                    specs_data.append(spec_data)
             
+            logging.info(f"Returning {len(specs_data)} processed specs")
             return specs_data
             
         except Exception as e:
             logging.error(f"Error retrieving OpenAPI specs: {str(e)}")
-            raise Exception(f"Failed to retrieve OpenAPI specs: {str(e)}")
+            return []
