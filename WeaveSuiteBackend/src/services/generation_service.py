@@ -284,7 +284,7 @@ class GenerationService:
         try:
             #prompt for the LLM
             intro = (
-                "You are a QA engineer. Generate pytest tests that hit each endpoint through the appropriate API gateway. "
+                "You are a QA engineer. Generate a suite of system tests using pytest through the appropriate API gateway. "
                 "Generate complete (no TODOs, no placeholders), self-contained, executable code that runs without any user intervention or external dependencies."
                 "Name tests test_<gateway_name>_<service>_<path>_<method>, include meaningfull assertions for status codes and response schemas (assert response structure should matches OpenAPI schemas). "
                 "IMPORTANT INSTRUCTIONS:\n"
@@ -293,11 +293,13 @@ class GenerationService:
                 "3. Construct the full URL for each test using the gateway's endpoint and service routing:\n"
                 "   - Use the gateway's 'endpoint' field from the microservices data as the base URL"
                 "   - Append the service path from the gateway's routing configuration (e.g., /auth, /user, /wallet)\n"
-                "   - Final URL format: http://{gateway_endpoint}{service_path}{endpoint_path}\n"
+                "   - Final URL format: http://{gateway_endpoint}{service_path}{endpoint_path}. Use this final URL format inside each test, DO NOT use a varible to store the base url\n"
                 "4. Each test must be linked to the correct gateway - never mix gateways or go directly to services\n"
                 "5. Extract authentication requirements from each service's OpenAPI specs and include proper handling:\n"
                 "   - Support various authentication methods (Bearer tokens, API keys, Basic auth, etc.), create authentication functions that obtain real tokens from login endpoints\n"
-                "   - Include authentication setup for tokens/sessions in test fixtures or helper methods, make sure test functions that require fixtures accepts them as parameters\n"
+                "   - Include authentication setup for tokens/sessions in test fixtures or helper methods, functions that use fixtures MUST include them as parameters\n"
+                "   - Use pytest fixtures properly with BOTH fixture definition AND parameter acceptance\n"
+                "   - EVERY test function that needs authentication MUST accept the fixture parameter. NEVER reference fixtures without accepting them as parameters\n"
                 "   - Handle different auth schemes per service if they vary\n"
                 "   - Include meaningful random test data"
                 "6. Return ONLY valid JSON in this exact format:\n"
