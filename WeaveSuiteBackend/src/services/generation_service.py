@@ -140,8 +140,8 @@ class GenerationService:
                 if template_code:
                     template_id = self._store_template(template_code)
             
-            tests_created = self._store_tests(test_code, specs, template_id)
-            result = {"status": "success", "tests_created": tests_created}
+            tests_created, tests_updated = self._store_tests(test_code, specs, template_id)
+            result = {"status": "success", "tests_created": tests_created, "tests_updated": tests_updated}
 
             if template_id:
                 result["template_id"] = template_id
@@ -352,7 +352,6 @@ class GenerationService:
                             logging.info(f"    - {method.upper()} {path}")
 
             logging.info(f"Full prompt length: {len(full_prompt)} characters")
-            logging.debug(f"Full prompt content:\n{full_prompt}")
 
             #generate content using Google AI
             config = types.GenerateContentConfig(
@@ -397,7 +396,6 @@ class GenerationService:
             
             try:
                 parsed_response = json.loads(content)
-                
                 logging.info("Response structure:")
                 
                 if isinstance(parsed_response, dict):
@@ -526,7 +524,7 @@ class GenerationService:
             
         return ms
         
-    def _store_tests(self, test_code: str, specs: List[OpenAPISpec], template_id: int = None) -> int:
+    def _store_tests(self, test_code: str, specs: List[OpenAPISpec], template_id: int = None) -> tuple:
         """Parse and store individual tests from the generated code"""
         logging.info("Parsing and storing generated test code...")
         logging.info(f"Test code length: {len(test_code)} characters")
@@ -561,10 +559,6 @@ class GenerationService:
             #preserve the original parameters when reconstructing the function
             complete_function = f"def {test_name}{test_params}:\n" + '\n'.join(cleaned_lines)
             test_functions.append((test_name, complete_function))
-            
-            logging.debug(f"Extracted test function: {test_name}{test_params}")
-        
-        logging.info(f"Found {len(test_functions)} test functions in generated code")
         
         #create a mapping from microservice names to their OpenAPI specs
         microservice_to_specs = {}
@@ -588,7 +582,6 @@ class GenerationService:
             
             if microservice_specs:
                 microservice_to_specs[service_name] = microservice_specs
-                logging.debug(f"Microservice '{microservice.name}' -> {len(microservice_specs)} spec(s)")
         
         logging.debug(f"Available microservices: {list(microservice_to_specs.keys())}")
         
@@ -677,4 +670,4 @@ class GenerationService:
             logging.error(f"Failed to commit test changes: {str(e)}")
             raise
         
-        return tests_created
+        return tests_created, tests_updated
