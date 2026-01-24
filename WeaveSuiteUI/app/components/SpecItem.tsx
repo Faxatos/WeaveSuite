@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronUp, ExternalLink, Globe } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronUp} from 'lucide-react';
 
 interface MicroserviceSpec {
   id: string;
@@ -116,18 +116,7 @@ export default function SpecItem({ spec }: SpecItemProps) {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Service URL</p>
-              <div className="mt-1 flex items-center">
-                <Globe className="w-4 h-4 mr-2 text-gray-400" />
-                <a 
-                  href={spec.microservice.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                >
-                  {spec.microservice.url}
-                  <ExternalLink className="w-3 h-3 ml-1" />
-                </a>
-              </div>
+              <p className="mt-1 text-sm">{spec.microservice.url}</p>
             </div>
 
             <div>

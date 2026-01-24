@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Graph from './components/Graph';
+import Graph from '../components/Graph';
 
 interface MicroserviceNode {
   data: {
