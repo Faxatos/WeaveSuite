@@ -122,14 +122,11 @@ class GenerationService:
                 logging.warning("No OpenAPI specs found in database")
                 return {"status": "error", "message": "No OpenAPI specs found in database"}
             
-            #determine if this is the first run (no links exist yet)
-            first_run = self.db.query(Link).count() == 0
-                
             #microservice infos for the prompt
             microservice_info = self._extract_microservices_info()
 
             #generate via LLM!
-            response_data = self._generate_with_llm(microservice_info, specs, first_run)
+            response_data = self._generate_with_llm(microservice_info, specs)
             
             #extract and store template from LLM response
             test_code = response_data.get("tests", "")
@@ -141,15 +138,13 @@ class GenerationService:
                     template_id = self._store_template(template_code)
             
             tests_created, tests_updated = self._store_tests(test_code, specs, template_id)
-            result = {"status": "success", "tests_created": tests_created, "tests_updated": tests_updated}
-
-            if template_id:
-                result["template_id"] = template_id
-
-            if first_run:
-                positions_updated = self._store_positions(response_data.get("positions", []))
-                links_created = self._store_links(response_data.get("links", []))
-                result.update({"positions_updated": positions_updated, "links_created": links_created})
+            
+            result = {
+                "status": "success", 
+                "tests_created": tests_created, 
+                "tests_updated": tests_updated,
+                "template_id": template_id
+            }
 
             logging.info(f"Generation completed successfully: {result}")
             return result
@@ -279,7 +274,7 @@ class GenerationService:
         #logging.debug(f"Final endpoint info: {endpoint}")
         return endpoint
     
-    def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec], include_layout: bool) -> Dict[str, Any]:
+    def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec]) -> Dict[str, Any]:
         """Generate test code using Google AI API"""
         try:
             #prompt for the LLM
@@ -304,20 +299,12 @@ class GenerationService:
                 "   - Include meaningful random test data"
                 "6. Return ONLY valid JSON in this exact format:\n"
                 "{\n"
-                ' "tests": "python test code here",\n'
+                ' "tests": "python test code here"\n'
+                "}\n"
+                "Do not include any markdown formatting."
             )
             
             
-            if include_layout: #true only when generating microservices graph
-                intro += (
-                    '  "positions": [{"name": "service_name", "namespace": "namespace", "x": "x_numeric_position", "y": "y_numeric_position"}],\n'
-                    '  "links": [{"source_name": "svc1", "source_namespace": "ns1", "target_name": "svc2", "target_namespace": "ns2", "label": "significant_label"}]\n'
-                )
-            else:
-                intro = intro.rstrip(',\n') + '\n'
-            
-            intro += "}\n\nDo not include any markdown formatting or explanations, just pure JSON."
-
             payload = {
                 "microservices": microservice_info,
                 "openapi_specs": {spec.id: spec.spec for spec in specs}
@@ -330,7 +317,6 @@ class GenerationService:
             logging.info(f"Payload summary:")
             logging.info(f"  - Microservices count: {len(payload['microservices'])}")
             logging.info(f"  - OpenAPI specs count: {len(payload['openapi_specs'])}")
-            logging.info(f"  - Include layout: {include_layout}")
             
             #log microservice details
             logging.info("Microservices in payload:")
@@ -412,29 +398,6 @@ class GenerationService:
                                         logging.info(f"      - {test_name}")
                             else:
                                 logging.info(f"  - {key}: {type(value).__name__}")
-                        elif key == "positions":
-                            if isinstance(value, list):
-                                logging.info(f"  - {key}: {len(value)} positions")
-                                for pos in value:
-                                    if isinstance(pos, dict):
-                                        name = pos.get('name', 'Unknown')
-                                        namespace = pos.get('namespace', 'Unknown')
-                                        x = pos.get('x', 0)
-                                        y = pos.get('y', 0)
-                                        logging.info(f"      - {name}/{namespace} at ({x}, {y})")
-                            else:
-                                logging.info(f"  - {key}: {type(value).__name__}")
-                        elif key == "links":
-                            if isinstance(value, list):
-                                logging.info(f"  - {key}: {len(value)} links")
-                                for link in value:
-                                    if isinstance(link, dict):
-                                        source = f"{link.get('source_name', 'Unknown')}/{link.get('source_namespace', 'Unknown')}"
-                                        target = f"{link.get('target_name', 'Unknown')}/{link.get('target_namespace', 'Unknown')}"
-                                        label = link.get('label', 'No label')
-                                        logging.info(f"      - {source} -> {target} ({label})")
-                            else:
-                                logging.info(f"  - {key}: {type(value).__name__}")
                         else:
                             logging.info(f"  - {key}: {type(value).__name__} - {str(value)[:100]}...")
                 else:
@@ -464,52 +427,6 @@ class GenerationService:
             logging.error(f"Error calling Google AI API: {str(e)}")
             logging.error("=" * 80)
             raise
-
-    def _store_positions(self, positions: List[Dict]) -> int:
-        """Update microservice coordinates"""
-        logging.info(f"Storing {len(positions)} microservice positions...")
-        updated = 0
-        for pos in positions:
-            ms = self.db.query(Microservice).filter_by(
-                name=pos["name"], 
-                namespace=pos["namespace"]
-            ).first()
-            if ms:
-                logging.debug(f"Updating position for {pos['name']}/{pos['namespace']}: ({pos.get('x', 0)}, {pos.get('y', 0)})")
-                ms.x = pos.get("x", 0.0)
-                ms.y = pos.get("y", 0.0)
-                updated += 1
-            else:
-                logging.warning(f"Microservice not found for position update: {pos['name']}/{pos['namespace']}")
-        
-        self.db.commit()
-        logging.info(f"Successfully updated positions for {updated} microservices")
-        return updated
-    
-    def _store_links(self, links: List[Dict]) -> int:
-        """Replace existing links with new ones"""
-        logging.info(f"Storing {len(links)} microservice links...")
-        created = 0
-        for link in links:
-            source = self._get_microservice(link["source_name"], link["source_namespace"])
-            target = self._get_microservice(link["target_name"], link["target_namespace"])
-            if source and target:
-                logging.debug(f"Creating link: {link['source_name']}/{link['source_namespace']} -> {link['target_name']}/{link['target_namespace']} ({link.get('label', 'No label')})")
-                self.db.add(Link(
-                    source_id=source.id,
-                    target_id=target.id,
-                    label=link.get("label", "")
-                ))
-                created += 1
-            else:
-                if not source:
-                    logging.warning(f"Source microservice not found for link: {link['source_name']}/{link['source_namespace']}")
-                if not target:
-                    logging.warning(f"Target microservice not found for link: {link['target_name']}/{link['target_namespace']}")
-        
-        self.db.commit()
-        logging.info(f"Successfully created {created} links")
-        return created
     
     def _get_microservice(self, name: str, namespace: str) -> Microservice:
         ms = self.db.query(Microservice).filter_by(

@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from db.database import get_db
-from db.models import Link
+from db.models import Test
 from services.discovery_service import DiscoveryService
 from services.spec_service import SpecService
 from services.generation_service import GenerationService
@@ -24,8 +24,10 @@ async def startup_event():
         SpecService(db).fetch_and_store_specs()
         
         #generate tests on first execution
-        links = db.query(Link).all()
-        if not links:
+        tests_exist = db.query(Test).first() is not None
+
+        if not tests_exist:
+            #we have no tests yet
             GenerationService(db).generate_and_store_tests()
     finally:
         db.close()
