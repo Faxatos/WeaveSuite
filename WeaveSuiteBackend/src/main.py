@@ -8,6 +8,7 @@ from services.discovery_service import DiscoveryService
 from services.spec_service import SpecService
 from services.generation_service import GenerationService
 from services.test_service import TestService
+from services.coverage_service import CoverageService
 from scripts.init_db import init_db
 import logging
 
@@ -109,7 +110,7 @@ async def execute_single_test(test_id: int, db: Session = Depends(get_db)):
 async def get_service_map(db: Session = Depends(get_db)):
     """Get all microservices and their links"""
     try:
-        service_map = DiscoveryService(db).get_graph()
+        service_map = CoverageService(db).get_graph()
         #check if the service map is empty (no nodes or no edges)
         if not service_map.get("nodes") or not service_map.get("edges"):
             raise HTTPException(

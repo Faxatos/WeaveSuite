@@ -3,8 +3,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import exc
 import logging
 
-from typing import Dict, Any
-
 from db.models import Microservice, Link, OpenAPISpec
 
 class DiscoveryService:
@@ -236,51 +234,6 @@ class DiscoveryService:
                 return True
         
         return False
-
-    def get_graph(self) -> Dict[str, Any]:
-        """Get all microservices and their links"""
-        try:
-            microservices = self.db.query(Microservice).all()
-            links = self.db.query(Link).all()
-            
-            nodes = []
-            for ms in microservices:
-                node = {
-                    "data": {
-                        "id": ms.id,
-                        "name": ms.name,
-                        "namespace": ms.namespace,
-                        "endpoint": ms.endpoint,
-                        "service_type": ms.service_type
-                    },
-                    "position": {
-                        "x": ms.x,
-                        "y": ms.y
-                    }
-                }
-                nodes.append(node)
-                
-            edges = []
-            for link in links:
-                edge = {
-                    "data": {
-                        "id": link.id,
-                        "source": link.source_id,
-                        "target": link.target_id,
-                        "label": link.label or ""
-                    }
-                }
-                edges.append(edge)
-                
-            print(f"Returning graph with {len(nodes)} nodes and {len(edges)} edges")
-            return {
-                "nodes": nodes,
-                "edges": edges
-            }
-            
-        except Exception as e:
-            logging.error(f"Failed to get service map: {str(e)}")
-            raise
 
     def get_openapi_specs(self):
         """Get all OpenAPI specifications with their microservice details"""
