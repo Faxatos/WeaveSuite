@@ -14,6 +14,11 @@ class SpecService:
         updated = []
         services = self.db.query(Microservice).all()
         
+        #define the headers to force frameworks to return JSON instead of YAML
+        headers = {
+            "Accept": "application/json"
+        }
+        
         for service in services:
             #logging.info(f"DEBUG: fetching from service: {service.name} (id={service.id}, endpoint={service.endpoint})")
             spec = None
@@ -27,7 +32,9 @@ class SpecService:
                 try:
                     base_url = f"http://{service.endpoint}"
                     full_url = urljoin(base_url, path)
-                    response = requests.get(full_url, timeout=5)
+                    
+                    #added headers=headers
+                    response = requests.get(full_url, headers=headers, timeout=5)
                     
                     if response.status_code == 200:
                         try:
@@ -73,7 +80,7 @@ class SpecService:
         if service.openapi_path == "gateway-aggregated":
             #handling for gateway services
             paths.extend([
-                #ToDo: add othet common gateway paths
+                #ToDo: add other common gateway paths
                 'v3/api-docs/swagger-config'
             ])
         elif service.openapi_path:
@@ -114,7 +121,7 @@ class SpecService:
         #add gateway-specific paths if this looks like a gateway
         if service.service_type == "gateway" or 'gateway' in service.name.lower():
             gateway_paths = [
-                #ToDo: add othet common gateway paths
+                #ToDo: add other common gateway paths
                 'v3/api-docs/swagger-config'
             ]
             return gateway_paths + default_paths

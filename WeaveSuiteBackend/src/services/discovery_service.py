@@ -178,9 +178,9 @@ class DiscoveryService:
         return False
     
     def _extract_openapi_path(self, annotations, labels, service_name):
-        """Extract OpenAPI path from service annotations with fallback logic"""
+        """Extract OpenAPI path from service annotations with general framework support"""
         
-        # Priority order for annotation keys
+        #standard annotation keys for OpenAPI/Swagger
         annotation_keys = [
             'openapi.io/path',
             'swagger.io/path', 
@@ -189,27 +189,41 @@ class DiscoveryService:
             'docs.io/openapi-path'
         ]
         
-        #check annotations first
+        found_path = None
+
+        #check annotations first (highest priority)
         for key in annotation_keys:
             if key in annotations and annotations[key].strip():
-                path = annotations[key].strip()
-                #logging.info(f"Found OpenAPI path in annotation {key}: {path} for service {service_name}")
-                return path
+                found_path = annotations[key].strip()
+                #logging.info(f"Found OpenAPI path in annotation {key}: {found_path} for service {service_name}")
+                break
         
-        #check labels as fallback
-        for key in annotation_keys:
-            label_key = key.replace('/', '-').replace('.', '-')  # Convert to valid label format
-            if label_key in labels and labels[label_key].strip():
-                path = labels[label_key].strip()
-                #logging.info(f"Found OpenAPI path in label {label_key}: {path} for service {service_name}")
-                return path
-        
-        #gateway-specific logic based on service name
-        if 'gateway' in service_name.lower():
+        # check labels as fallback
+        if not found_path:
+            for key in annotation_keys:
+                label_key = key.replace('/', '-').replace('.', '-')
+                if label_key in labels and labels[label_key].strip():
+                    found_path = labels[label_key].strip()
+                    #logging.info(f"Found OpenAPI path in label {label_key}: {found_path} for service {service_name}")
+                    break
+
+        #many Java/Go/Node frameworks return YAML by default on standard root paths.
+        #if the path doesn't explicitly end in .json, we force it via query parameters.
+        if found_path:
+            # Common paths that are notoriously ambiguous about JSON vs YAML
+            ambiguous_paths = ["/openapi", "/api-docs", "/swagger", "/api/docs"]
+            is_ambiguous = any(found_path.rstrip('/') == path for path in ambiguous_paths)
+            
+            #if it's ambiguous and doesn't already have query params
+            if is_ambiguous and "?" not in found_path:
+                found_path = f"{found_path}?format=json"
+                #logging.debug(f"Appended '?format=json' to standard path for {service_name} to ensure JSON response")
+
+        #gateway-specific fallback logic
+        if not found_path and 'gateway' in service_name.lower():
             return "gateway-aggregated"
         
-        #logging.debug(f"No OpenAPI path annotation found for service {service_name}")
-        return None
+        return found_path
     
     def _is_gateway_service(self, labels, annotations, service_name):
         """Determine if a service is a gateway based on multiple indicators"""
