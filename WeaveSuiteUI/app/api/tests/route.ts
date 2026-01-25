@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { NextResponse } from 'next/server';
 
 // Define the API endpoint for the backend Python service
-const API_BASE_URL = process.env.API_BASE_URL || 'http://weavesuite-backend.default.svc.cluster.local:8000';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://weavesuite-backend:8000';
 
 // Define interfaces for the test data
 interface TestEndpoint {

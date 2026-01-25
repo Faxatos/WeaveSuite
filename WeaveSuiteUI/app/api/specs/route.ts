@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://weavesuite-backend.default.svc.cluster.local:8000';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://weavesuite-backend:8000';
 
 //interface for the spec data
 interface MicroserviceSpec {
