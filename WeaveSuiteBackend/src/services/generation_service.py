@@ -40,11 +40,11 @@ class GenerationService:
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
         self.client = genai.Client(api_key=api_key)
-        self.model_name = 'gemini-2.5-pro'
+        self.model_name = 'gemini-3-pro-preview'
 
-    def _extract_microservices_info(self) -> Dict:
+    def _extract_microservices_info(self, valid_ms_ids: List[int]) -> Dict:
         """Extract microservice information including endpoints from database"""
-        microservices = self.db.query(Microservice).all()
+        microservices = self.db.query(Microservice).filter(Microservice.id.in_(valid_ms_ids)).all()
         
         microservice_info = {}
         for ms in microservices:
@@ -123,7 +123,8 @@ class GenerationService:
                 return {"status": "error", "message": "No OpenAPI specs found in database"}
             
             #microservice infos for the prompt
-            microservice_info = self._extract_microservices_info()
+            ms_ids_with_specs = [spec.microservice_id for spec in specs]
+            microservice_info = self._extract_microservices_info(ms_ids_with_specs)
 
             #generate via LLM!
             response_data = self._generate_with_llm(microservice_info, specs)
@@ -340,7 +341,7 @@ class GenerationService:
             #generate content using Google AI
             config = types.GenerateContentConfig(
                 temperature=0.2,
-                max_output_tokens=12000,
+                max_output_tokens=64000,
             )
 
             response = self.client.models.generate_content(
