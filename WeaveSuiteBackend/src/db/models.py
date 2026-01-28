@@ -80,6 +80,3 @@ class TestEndpointCoverage(Base):
     
     test_id = Column(Integer, ForeignKey("tests.id", ondelete="CASCADE"), primary_key=True)
     endpoint_id = Column(Integer, ForeignKey("endpoints.id", ondelete="CASCADE"), primary_key=True)
-    
-    test = relationship("Test", back_populates="endpoint_coverages")
-    endpoint = relationship("Endpoint", back_populates="test_coverages")
