@@ -1,9 +1,8 @@
-from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
-from typing import Dict, Any, List
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, status, Query
+from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from db.database import get_db
-from db.models import Test
+from db.models import Test, Endpoint, TestEndpointCoverage
 from services.discovery_service import DiscoveryService
 from services.spec_service import SpecService
 from services.generation_service import GenerationService
