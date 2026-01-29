@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from dotenv import load_dotenv
@@ -7,7 +6,7 @@ import sys
 import tempfile
 import subprocess
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 import re
 import time
 
@@ -446,10 +445,6 @@ class TestService:
             test.last_execution = datetime.utcnow()
             test.execution_time = results.get("execution_time", 0)
             test.error_message = results.get("error_message")
-
-            #toDo: coverage test tracking
-            if not test.services_visited:
-                test.services_visited = json.dumps([])
 
             self.db.commit()
 
