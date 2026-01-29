@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from pathlib import Path
 import sys
 import re
-from datetime import datetime
 from typing import List, Dict, Any
 
 from google import genai
@@ -161,16 +160,7 @@ class GenerationService:
             
             result = []
             for test in tests:
-                #extract endpoint info from test name and code
                 endpoint_info = self._extract_endpoint_info(test.name, test.code)
-                
-                #parse services visited from JSON string if available
-                services_visited = []
-                if test.services_visited:
-                    try:
-                        services_visited = json.loads(test.services_visited)
-                    except json.JSONDecodeError:
-                        logging.warning(f"Invalid JSON in services_visited for test {test.id}")
                 
                 test_data = {
                     "id": test.id,
@@ -180,14 +170,16 @@ class GenerationService:
                     "endpoint": endpoint_info,
                     "lastRun": test.last_execution.isoformat() if test.last_execution else None,
                     "duration": test.execution_time,
-                    "errorMessage": test.error_message,
-                    "servicesVisited": services_visited
+                    "errorMessage": test.error_message
                 }
 
-                #logging.debug(f"test_data: {test_data}")
                 result.append(test_data)
             
             return result
+            
+        except Exception as e:
+            logging.error(f"Failed to fetch system tests: {str(e)}")
+            return []
             
         except Exception as e:
             logging.error(f"Failed to fetch system tests: {str(e)}")
@@ -543,12 +535,9 @@ class GenerationService:
             else:
                 logging.debug(f"  - No matching spec found for test {test_name}")
             
-            #store in the database
             try:
-                #check if test already exists
                 existing_test = self.db.query(Test).filter_by(name=test_name).first()
                 if existing_test:
-                    #update existing test
                     logging.debug(f"  - Updating existing test: {test_name}")
                     existing_test.code = complete_test
                     existing_test.spec_id = spec_id
@@ -557,10 +546,8 @@ class GenerationService:
                     existing_test.last_execution = None
                     existing_test.execution_time = 0
                     existing_test.error_message = None
-                    existing_test.services_visited = json.dumps([])
                     tests_updated += 1
                 else:
-                    #create new test
                     logging.debug(f"  - Creating new test: {test_name}")
                     new_test = Test(
                         name=test_name,
@@ -570,8 +557,7 @@ class GenerationService:
                         status="pending",
                         last_execution=None,
                         execution_time=0,
-                        error_message=None,
-                        services_visited=json.dumps([])
+                        error_message=None
                     )
                     self.db.add(new_test)
                     tests_created += 1
