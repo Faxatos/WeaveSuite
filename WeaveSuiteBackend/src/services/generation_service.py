@@ -12,7 +12,7 @@ from google import genai
 from google.genai import types
 from sqlalchemy.orm import Session
 
-from db.models import OpenAPISpec, Test, Microservice, Link, TestTemplate
+from db.models import OpenAPISpec, Test, Microservice, TestTemplate
 
 #logging config
 logging.basicConfig(

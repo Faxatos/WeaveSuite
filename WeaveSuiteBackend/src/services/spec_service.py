@@ -3,6 +3,7 @@ import requests
 from sqlalchemy.orm import Session
 import logging
 from urllib.parse import urljoin
+
 from db.models import OpenAPISpec, Microservice
 
 class SpecService:
@@ -59,12 +60,15 @@ class SpecService:
             #store the spec if found
             if spec is not None:
                 try:
-                    self.store_spec(
+                    stored_spec = self.store_spec(
                         microservice_id=service.id,
                         spec=spec,
                     )
                     updated.append(service.name)
                     logging.info(f"Stored OpenAPI spec for {service.name} (source: {path})")
+                    
+                    #extract endpoints from the newly stored spec
+                    self._extract_endpoints_from_spec(stored_spec)
                     
                 except Exception as store_error:
                     logging.error(f"Failed to store spec for {service.name}: {str(store_error)}")
@@ -72,6 +76,16 @@ class SpecService:
                 logging.warning(f"Failed to fetch spec for {service.name} from all endpoints, base: {service.endpoint}")
         
         return {"updated": updated}
+    
+    def _extract_endpoints_from_spec(self, spec: OpenAPISpec):
+        """Extract endpoints from an OpenAPI spec for coverage tracking"""
+        try:
+            from services.coverage_service import CoverageService
+            coverage_service = CoverageService(self.db)
+            endpoints = coverage_service.extract_endpoints_from_spec(spec.id)
+            logging.info(f"Extracted {len(endpoints)} endpoints from spec {spec.id}")
+        except Exception as e:
+            logging.warning(f"Failed to extract endpoints from spec {spec.id}: {str(e)}")
     
     def _get_paths_from_annotation(self, service):
         """Get OpenAPI paths based on service annotations"""

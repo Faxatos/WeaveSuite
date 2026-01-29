@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import exc
 import logging
 
-from db.models import Microservice, Link, OpenAPISpec
+from db.models import Microservice
 
 class DiscoveryService:
     def __init__(self, db: Session):
@@ -23,7 +23,6 @@ class DiscoveryService:
             'kubernetes',
             'kube-dns',
             'metrics-server',
-            'postgres', #ToDo: name weavesuite postgres as weavesuite-postgres
             'weavesuite-backend',
             'weavesuite-frontend',
         }
@@ -252,8 +251,7 @@ class DiscoveryService:
     def get_openapi_specs(self):
         """Get all OpenAPI specifications with their microservice details"""
         try:
-            from db.models import OpenAPISpec, Microservice
-            import logging
+            from db.models import OpenAPISpec
             
             specs_query = self.db.query(OpenAPISpec).join(Microservice).all()
             
