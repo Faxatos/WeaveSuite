@@ -28,6 +28,7 @@ export default function TestsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExecutingAll, setIsExecutingAll] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
 
   // Fetch tests data
   const fetchTests = useCallback(async (): Promise<SystemTest[]> => {
@@ -81,6 +82,11 @@ export default function TestsPage() {
     try {
       setIsGenerating(true);
       setError(null);
+      setGenerationStatus('Starting test generation...');
+      
+      // Clear current tests to show we're starting fresh
+      setTests([]);
+      
       const response = await fetch('/api/tests?action=generateTests', {
         method: 'POST',
       });
@@ -90,16 +96,60 @@ export default function TestsPage() {
         throw new Error(errorData.error || 'Failed to generate tests');
       }
       
-      // Refresh tests after generation
-      setTimeout(() => {
-        setRetryCount(prev => prev + 1);
-      }, 2000);
+      setGenerationStatus('Generating tests with AI... This may take a few minutes.');
+      
+      // Generation API call returned - now poll until tests appear
+      // The backend generates tests asynchronously with LLM, so we need to wait
+      const pollInterval = 3000; // 3 seconds
+      const maxAttempts = 120; // Max 6 minutes of polling (LLM can be slow)
+      let attempts = 0;
+      
+      const pollForTests = async () => {
+        attempts++;
+        const elapsedMinutes = Math.floor((attempts * pollInterval) / 60000);
+        const elapsedSeconds = Math.floor(((attempts * pollInterval) % 60000) / 1000);
+        setGenerationStatus(`Generating tests with AI... (${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')} elapsed)`);
+        
+        try {
+          const testsData = await fetchTests();
+          
+          if (testsData.length > 0) {
+            // Tests have been generated!
+            setTests(testsData);
+            setIsGenerating(false);
+            setGenerationStatus(null);
+            return;
+          }
+          
+          if (attempts < maxAttempts) {
+            // No tests yet, keep polling
+            setTimeout(pollForTests, pollInterval);
+          } else {
+            // Timeout - stop polling
+            setIsGenerating(false);
+            setGenerationStatus(null);
+            setError('Test generation is taking longer than expected. Please refresh the page to check status.');
+          }
+        } catch (err) {
+          // 404 means no tests yet, keep polling
+          if (attempts < maxAttempts) {
+            setTimeout(pollForTests, pollInterval);
+          } else {
+            setIsGenerating(false);
+            setGenerationStatus(null);
+            setError('Test generation timed out. Please refresh to check status.');
+          }
+        }
+      };
+      
+      // Start polling after a short delay to let generation begin
+      setTimeout(pollForTests, pollInterval);
       
     } catch (error) {
       console.error('Error generating tests:', error);
-      setError('Failed to generate tests. Please try again.');
-    } finally {
+      setError('Failed to start test generation. Please try again.');
       setIsGenerating(false);
+      setGenerationStatus(null);
     }
   };
 
@@ -364,8 +414,17 @@ export default function TestsPage() {
                 : 'bg-green-500 text-white hover:bg-green-600'
             }`}
           >
-            <Zap className="w-4 h-4 mr-2" />
-            {isGenerating ? 'Generating...' : 'Generate Tests'}
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 mr-2" />
+                Generate Tests
+              </>
+            )}
           </button>
           
           <button
@@ -399,7 +458,15 @@ export default function TestsPage() {
       
       {filteredTests.length === 0 ? (
         <div className="text-center py-10 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No tests found matching the selected filter.</p>
+          {isGenerating && generationStatus ? (
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500 mb-4"></div>
+              <p className="text-gray-600 font-medium">{generationStatus}</p>
+              <p className="text-gray-400 text-sm mt-2">Please wait while AI generates tests...</p>
+            </div>
+          ) : (
+            <p className="text-gray-500">No tests found matching the selected filter.</p>
+          )}
         </div>
       ) : (
         <div>
