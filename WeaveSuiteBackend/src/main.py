@@ -126,6 +126,28 @@ async def get_system_tests(db: Session = Depends(get_db)):
             detail=f"Failed to retrieve system tests: {str(e)}"
         )
     
+@app.delete("/api/system-tests")
+async def delete_all_tests(db: Session = Depends(get_db)):
+    """Delete all tests from the database"""
+    try:
+        result = GenerationService(db).delete_all_tests()
+        if result["status"] == "error":
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result["message"]
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting tests: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete tests: {str(e)}"
+        )
+    
+# -- Coverage Endpoints --
+    
 @app.post("/api/coverage/refresh")
 async def refresh_coverage(db: Session = Depends(get_db)):
     """Full refresh: extract endpoints from specs and analyze all tests"""

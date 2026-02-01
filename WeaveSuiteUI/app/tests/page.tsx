@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import TestItem from '@/app/components/TestItem';
-import { Play, Zap } from 'lucide-react';
+import { Play, Zap, Trash2 } from 'lucide-react';
 
 export interface SystemTest {
   id: string;
@@ -15,9 +15,8 @@ export interface SystemTest {
     params?: Record<string, string>;
   };
   lastRun: string;
-  duration: number; // in seconds
+  duration: number;
   errorMessage?: string;
-  servicesVisited: string[];
 }
 
 export default function TestsPage() {
@@ -28,54 +27,45 @@ export default function TestsPage() {
   const [filter, setFilter] = useState<'all' | 'passed' | 'failed' | 'pending' | 'error'>('all');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExecutingAll, setIsExecutingAll] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch tests data
+  const fetchTests = useCallback(async (): Promise<SystemTest[]> => {
+    const res = await fetch('/api/tests');
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      if (res.status === 404) {
+        return [];
+      }
+      throw new Error(errorData.error || 'Failed to fetch tests');
+    }
+    
+    const data = await res.json();
+    let testsData: SystemTest[];
+    
+    if (data.data && Array.isArray(data.data)) {
+      testsData = data.data;
+    } else if (data.tests && Array.isArray(data.tests)) {
+      testsData = data.tests;
+    } else if (Array.isArray(data)) {
+      testsData = data;
+    } else {
+      testsData = [];
+    }
+    
+    return testsData
+      .map(t => ({ ...t, id: String(t.id) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, []);
 
   useEffect(() => {
-    const fetchTests = async () => {
+    const loadTests = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        const res = await fetch('/api/tests');
-        
-        if (!res.ok) {
-          // Handle specific error cases
-          const errorData = await res.json();
-          
-          if (res.status === 404 && errorData.error?.includes('No system tests available')) {
-            setError('No tests available yet. Retrying...');
-            
-            // Wait a second and retry
-            setTimeout(() => {
-              setRetryCount(prev => prev + 1);
-            }, 1000);
-            return;
-          }
-          
-          throw new Error(errorData.error || 'Failed to fetch tests');
-        }
-        
-        const data = await res.json();
-        console.log('Raw API response:', data);
-        let testsData: SystemTest[];
-        
-        // Check if the data is wrapped in a 'data' property (from the API response)
-        if (data.data && Array.isArray(data.data)) {
-          testsData = data.data;
-        } else if (data.tests && Array.isArray(data.tests)) {
-          testsData = data.tests;
-        } else if (Array.isArray(data)) {
-          testsData = data;
-        } else {
-          testsData = [];
-        }
-        
-        // Convert numeric ids to string for TestItem compatibility and sort by name
-        testsData = testsData
-          .map(t => ({ ...t, id: String(t.id) }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-        
+        const testsData = await fetchTests();
         setTests(testsData);
-        setError(null);
       } catch (error) {
         console.error('Error fetching tests data:', error);
         setError('Failed to load tests data. Please try again later.');
@@ -84,8 +74,8 @@ export default function TestsPage() {
       }
     };
 
-    fetchTests();
-  }, [retryCount]);
+    loadTests();
+  }, [retryCount, fetchTests]);
 
   const handleGenerateTests = async () => {
     try {
@@ -100,7 +90,7 @@ export default function TestsPage() {
         throw new Error(errorData.error || 'Failed to generate tests');
       }
       
-      // Refresh tests after generation (new tests are created)
+      // Refresh tests after generation
       setTimeout(() => {
         setRetryCount(prev => prev + 1);
       }, 2000);
@@ -135,15 +125,43 @@ export default function TestsPage() {
         throw new Error(errorData.error || 'Failed to execute tests');
       }
       
-      // Refresh tests after execution to get updated results
-      setTimeout(() => {
-        setRetryCount(prev => prev + 1);
-      }, 3000);
+      // Poll for results until no tests are pending
+      const pollInterval = 2000; // 2 seconds
+      const maxAttempts = 60; // Max 2 minutes of polling
+      let attempts = 0;
+      
+      const pollForResults = async () => {
+        attempts++;
+        
+        try {
+          const updatedTests = await fetchTests();
+          setTests(updatedTests);
+          
+          // Check if any tests are still pending
+          const hasPending = updatedTests.some(t => t.status === 'pending');
+          
+          if (hasPending && attempts < maxAttempts) {
+            // Continue polling
+            setTimeout(pollForResults, pollInterval);
+          } else {
+            // All tests completed or max attempts reached
+            setIsExecutingAll(false);
+            if (attempts >= maxAttempts && hasPending) {
+              setError('Some tests are still running. Refresh to check status.');
+            }
+          }
+        } catch (err) {
+          console.error('Error polling for test results:', err);
+          setIsExecutingAll(false);
+        }
+      };
+      
+      // Start polling after a short delay to let execution begin
+      setTimeout(pollForResults, pollInterval);
       
     } catch (error) {
       console.error('Error executing tests:', error);
       setError('Failed to execute all tests. Please try again.');
-    } finally {
       setIsExecutingAll(false);
     }
   };
@@ -174,34 +192,29 @@ export default function TestsPage() {
         throw new Error(errorData.error || 'Failed to execute test');
       }
       
-      // Update the specific test with the result
-      setTimeout(async () => {
+      // Poll for this specific test's result
+      const pollInterval = 1000;
+      const maxAttempts = 30;
+      let attempts = 0;
+      
+      const pollForResult = async () => {
+        attempts++;
+        
         try {
-          const res = await fetch('/api/tests');
-          if (res.ok) {
-            const data = await res.json();
-            let updatedTestsData: SystemTest[];
-            
-            if (data.data && Array.isArray(data.data)) {
-              updatedTestsData = data.data;
-            } else if (data.tests && Array.isArray(data.tests)) {
-              updatedTestsData = data.tests;
-            } else if (Array.isArray(data)) {
-              updatedTestsData = data;
-            } else {
-              updatedTestsData = [];
-            }
-            
-            updatedTestsData = updatedTestsData
-              .map(t => ({ ...t, id: String(t.id) }))
-              .sort((a, b) => a.name.localeCompare(b.name));
-            
-            setTests(updatedTestsData);
+          const updatedTests = await fetchTests();
+          setTests(updatedTests);
+          
+          const updatedTest = updatedTests.find(t => t.id === testId);
+          
+          if (updatedTest?.status === 'pending' && attempts < maxAttempts) {
+            setTimeout(pollForResult, pollInterval);
           }
-        } catch (error) {
-          console.error('Error refreshing test data:', error);
+        } catch (err) {
+          console.error('Error polling for test result:', err);
         }
-      }, 1000);
+      };
+      
+      setTimeout(pollForResult, pollInterval);
       
     } catch (error) {
       console.error('Error executing single test:', error);
@@ -215,6 +228,41 @@ export default function TestsPage() {
             : test
         )
       );
+    }
+  };
+
+  const handleDeleteAllTests = async () => {
+    if (!confirm('Are you sure you want to delete all tests? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      setIsDeleting(true);
+      setError(null);
+      
+      const response = await fetch('/api/tests', {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete tests');
+      }
+      
+      const data = await response.json();
+      const message = data.data?.message || `Deleted ${data.data?.deleted_count || 0} tests`;
+      
+      // Clear tests from state
+      setTests([]);
+      
+      // Show success message briefly
+      alert(message);
+      
+    } catch (error) {
+      console.error('Error deleting tests:', error);
+      setError('Failed to delete tests. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -273,7 +321,7 @@ export default function TestsPage() {
     );
   }
 
-  if (error) {
+  if (error && tests.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] flex-col">
         <div className="text-red-600 mb-4">{error}</div>
@@ -295,10 +343,23 @@ export default function TestsPage() {
         {/* Action buttons on the top right */}
         <div className="flex space-x-3">
           <button
-            onClick={handleGenerateTests}
-            disabled={isGenerating || loading}
+            onClick={handleDeleteAllTests}
+            disabled={isDeleting || tests.length === 0 || loading || isExecutingAll}
             className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              isGenerating || loading
+              isDeleting || tests.length === 0 || loading || isExecutingAll
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                : 'bg-red-500 text-white hover:bg-red-600'
+            }`}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {isDeleting ? 'Deleting...' : 'Delete All'}
+          </button>
+          
+          <button
+            onClick={handleGenerateTests}
+            disabled={isGenerating || loading || isExecutingAll}
+            className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              isGenerating || loading || isExecutingAll
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                 : 'bg-green-500 text-white hover:bg-green-600'
             }`}
@@ -321,6 +382,12 @@ export default function TestsPage() {
           </button>
         </div>
       </div>
+      
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+          {error}
+        </div>
+      )}
       
       <div className="mb-6">
         <FilterButton type="all" />

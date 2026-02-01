@@ -204,6 +204,32 @@ class GenerationService:
         #logging.debug(f"Friendly name result: {friendly_name}")
         return friendly_name
     
+    def delete_all_tests(self) -> Dict[str, Any]:
+        """Delete all tests and their associated coverage data from the database"""
+        try:
+            #get count before deletion
+            test_count = self.db.query(Test).count()
+            
+            if test_count == 0:
+                logging.info("No tests to delete")
+                return {"status": "success", "message": "No tests to delete", "deleted_count": 0}
+            
+            #delete all tests (cascade will handle TestEndpointCoverage)
+            self.db.query(Test).delete()
+            self.db.commit()
+            
+            logging.info(f"Successfully deleted {test_count} tests")
+            return {
+                "status": "success",
+                "message": f"Deleted {test_count} tests",
+                "deleted_count": test_count
+            }
+            
+        except Exception as e:
+            self.db.rollback()
+            logging.error(f"Failed to delete tests: {str(e)}")
+            return {"status": "error", "message": f"Failed to delete tests: {str(e)}"}
+    
     def _extract_endpoint_info(self, test_name: str, test_code: str) -> Dict[str, Any]:
         """Extract endpoint information from test name and code"""
         endpoint = {
