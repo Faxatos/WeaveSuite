@@ -1,18 +1,30 @@
+"""
+Coverage Service - Static Endpoint Coverage Analysis
+
+Extracts endpoints from OpenAPI specs, analyzes test code to find HTTP calls,
+and maps tests to endpoints to calculate coverage.
+
+Supports both direct HTTP calls and helper function patterns like:
+- requests.get("/path")
+- get_url("service", "/path") with MICROSERVICES configuration
+"""
+
 import re
-import ast
 import logging
-from typing import List, Dict, Any, Optional, Set
+from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 
-from db.models import OpenAPISpec, Endpoint, Test, TestEndpointCoverage, Microservice
+from db.models import OpenAPISpec, Endpoint, Test, TestEndpointCoverage, Microservice, TestTemplate
 
 logger = logging.getLogger(__name__)
 
 
 class CoverageService:
+    """Service for static endpoint coverage analysis"""
+    
     HTTP_METHODS = {'get', 'post', 'put', 'patch', 'delete', 'head', 'options'}
     
-    #patterns to detect HTTP calls in test code
+    # Patterns to detect HTTP calls in test code
     HTTP_CALL_PATTERNS = [
         # requests.get("/path"), requests.post(url), etc.
         r'requests\.(get|post|put|patch|delete|head|options)\s*\(\s*[f]?["\']([^"\']+)["\']',
@@ -24,8 +36,30 @@ class CoverageService:
         r'session\.(get|post|put|patch|delete|head|options)\s*\(\s*[f]?["\']([^"\']+)["\']',
     ]
     
+    # Patterns to detect service configuration in templates
+    # Handles: MICROSERVICES = {...}, SERVICES = {...}, SERVICE_URLS = {...}
+    SERVICE_DICT_PATTERNS = [
+        r'MICROSERVICES\s*=\s*\{([^}]+)\}',
+        r'SERVICES\s*=\s*\{([^}]+)\}',
+        r'SERVICE_URLS\s*=\s*\{([^}]+)\}',
+        r'ENDPOINTS\s*=\s*\{([^}]+)\}',
+    ]
+    
+    # Pattern for individual endpoint variables: CARTS_ENDPOINT = "http://..."
+    INDIVIDUAL_ENDPOINT_PATTERN = r'([A-Z_]+)_ENDPOINT\s*=\s*["\']([^"\']+)["\']'
+    
+    # Pattern to detect get_url("service", "/path") helper function usage
+    GET_URL_PATTERN = r'get_url\s*\(\s*["\']([^"\']+)["\']\s*,\s*[f]?["\']([^"\']+)["\']\s*\)'
+    
+    # Pattern for direct URL construction: f"{CARTS_ENDPOINT}/carts"
+    DIRECT_URL_PATTERN = r'f?["\']?\{?([A-Z_]+)_ENDPOINT\}?(/[^"\']+)["\']?'
+    
     def __init__(self, db: Session):
         self.db = db
+        self._microservices_cache: Dict[str, str] = {}
+        self._service_to_spec_cache: Dict[str, int] = {}
+    
+    # ==================== ENDPOINT EXTRACTION ====================
     
     def extract_endpoints_from_spec(self, spec_id: int) -> List[Endpoint]:
         """Extract all endpoints from an OpenAPI spec and store them"""
@@ -82,7 +116,7 @@ class CoverageService:
                 if not isinstance(operation, dict):
                     continue
                 
-                #check if endpoint already exists
+                # Check if endpoint already exists
                 existing = self.db.query(Endpoint).filter_by(
                     spec_id=spec.id,
                     path=path,
@@ -115,17 +149,26 @@ class CoverageService:
         
         return endpoints
     
+    # ==================== TEST ANALYSIS ====================
+    
     def analyze_test_coverage(self, test_id: int) -> Dict[str, Any]:
         """Analyze a single test to determine which endpoints it covers"""
         test = self.db.query(Test).filter_by(id=test_id).first()
         if not test:
             return {"status": "error", "message": "Test not found"}
         
+        # Build cache if not already built
+        if not self._service_to_spec_cache:
+            self._build_service_spec_cache()
+        
         return self._analyze_single_test(test)
     
     def analyze_all_tests(self) -> Dict[str, Any]:
         """Analyze all tests and update coverage mappings"""
         tests = self.db.query(Test).all()
+        
+        # Build service-to-spec mapping cache
+        self._build_service_spec_cache()
         
         total_mappings = 0
         results = []
@@ -148,28 +191,69 @@ class CoverageService:
             "details": results
         }
     
+    def _build_service_spec_cache(self):
+        """Build a cache mapping service names to spec IDs"""
+        self._service_to_spec_cache = {}
+        
+        microservices = self.db.query(Microservice).all()
+        for ms in microservices:
+            # Use the microservice name as key (lowercase for matching)
+            service_name = ms.name.lower()
+            
+            # Get the latest spec for this microservice
+            if ms.specs:
+                latest_spec = max(ms.specs, key=lambda s: s.id)
+                self._service_to_spec_cache[service_name] = latest_spec.id
+                
+                # Also add common variations
+                # e.g., "payment-http" -> "payment"
+                base_name = service_name.replace('-http', '').replace('-api', '')
+                if base_name != service_name:
+                    self._service_to_spec_cache[base_name] = latest_spec.id
+        
+        logger.debug(f"Service-to-spec cache: {self._service_to_spec_cache}")
+    
     def _analyze_single_test(self, test: Test) -> Dict[str, Any]:
         """Analyze a single test and create coverage mappings"""
         
-        #clear existing coverage for this test
+        # Clear existing coverage for this test
         self.db.query(TestEndpointCoverage).filter_by(test_id=test.id).delete()
         
-        #get endpoints to match against
-        if test.spec_id:
-            endpoints = self.db.query(Endpoint).filter_by(spec_id=test.spec_id).all()
-        else:
-            endpoints = self.db.query(Endpoint).all()
+        # Get combined code (template + test)
+        combined_code = self._get_combined_code(test)
         
-        #extract HTTP calls from test code
-        http_calls = self._extract_http_calls(test.code)
+        # Parse MICROSERVICES config from template
+        microservices_config = self._parse_microservices_config(combined_code)
+        
+        # Extract HTTP calls from combined code
+        http_calls = self._extract_http_calls(combined_code, microservices_config)
+        
+        # Get all endpoints for matching
+        all_endpoints = self.db.query(Endpoint).all()
+        
         matched_endpoints = []
         
-        for method, path in http_calls:
-            #find matching endpoint
+        for method, path, service_name in http_calls:
+            # Determine which spec to match against
+            target_spec_id = None
+            
+            if service_name:
+                # Use service name to find the right spec
+                target_spec_id = self._service_to_spec_cache.get(service_name.lower())
+            elif test.spec_id:
+                target_spec_id = test.spec_id
+            
+            # Filter endpoints by spec if we have a target
+            if target_spec_id:
+                endpoints = [e for e in all_endpoints if e.spec_id == target_spec_id]
+            else:
+                endpoints = all_endpoints
+            
+            # Find matching endpoint
             endpoint = self._find_matching_endpoint(path, method, endpoints)
             
             if endpoint and endpoint.id not in [e["endpoint_id"] for e in matched_endpoints]:
-                #create coverage mapping
+                # Create coverage mapping
                 coverage = TestEndpointCoverage(
                     test_id=test.id,
                     endpoint_id=endpoint.id
@@ -179,7 +263,8 @@ class CoverageService:
                 matched_endpoints.append({
                     "endpoint_id": endpoint.id,
                     "path": endpoint.path,
-                    "method": endpoint.method
+                    "method": endpoint.method,
+                    "service": service_name
                 })
         
         try:
@@ -197,36 +282,259 @@ class CoverageService:
             "endpoints_matched": matched_endpoints
         }
     
-    def _extract_http_calls(self, code: str) -> List[tuple]:
-        """Extract HTTP method and path from test code"""
-        calls = set()
+    def _get_combined_code(self, test: Test) -> str:
+        """Get combined template + test code for analysis"""
+        template_code = ""
         
+        if test.template_id:
+            template = self.db.query(TestTemplate).filter_by(id=test.template_id).first()
+            if template:
+                template_code = template.template_code
+        
+        if template_code:
+            return template_code + "\n\n" + test.code
+        
+        return test.code
+    
+    def _parse_microservices_config(self, code: str) -> Dict[str, str]:
+        """
+        Parse service configuration from code to get service -> URL mapping.
+        
+        Handles multiple patterns:
+        - Dict style: MICROSERVICES = {"carts": "http://..."}
+        - Dict style: SERVICES = {"carts": "http://..."}
+        - Individual: CARTS_ENDPOINT = "http://..."
+        """
+        config = {}
+        
+        # Try dict-style patterns first
+        for pattern in self.SERVICE_DICT_PATTERNS:
+            match = re.search(pattern, code, re.DOTALL)
+            if match:
+                dict_content = match.group(1)
+                
+                # Parse key-value pairs like: "carts": "http://carts.sockshop-core.svc.cluster.local:80"
+                entries = re.findall(r'["\']([^"\']+)["\']\s*:\s*["\']([^"\']+)["\']', dict_content)
+                for service_name, url in entries:
+                    config[service_name.lower()] = url
+                
+                if config:
+                    logger.debug(f"Parsed service dict config: {list(config.keys())}")
+                    return config
+        
+        # Try individual endpoint variable pattern
+        individual_matches = re.findall(self.INDIVIDUAL_ENDPOINT_PATTERN, code)
+        for var_prefix, url in individual_matches:
+            # Convert CARTS_ENDPOINT prefix to service name "carts"
+            service_name = var_prefix.lower().replace('_', '-')
+            # Handle variations like PAYMENT_HTTP -> payment
+            service_name = service_name.replace('-http', '').replace('-api', '')
+            config[service_name] = url
+        
+        if config:
+            logger.debug(f"Parsed individual endpoint config: {list(config.keys())}")
+        
+        return config
+    
+    def _extract_http_calls(self, code: str, microservices_config: Dict[str, str]) -> List[Tuple[str, str, Optional[str]]]:
+        """
+        Extract HTTP method, path, and service name from test code.
+        Returns list of (method, path, service_name) tuples.
+        
+        Handles multiple patterns:
+        - get_url("service", "/path") helper function
+        - f"{CARTS_ENDPOINT}/carts/{id}" direct construction
+        - requests.get("http://service.../path") direct URLs
+        """
+        calls = []
+        seen = set()
+        
+        # Pattern 1: Find get_url() calls and their context
+        get_url_calls = self._extract_get_url_calls(code, microservices_config)
+        for method, path, service_name in get_url_calls:
+            key = (method, path, service_name)
+            if key not in seen:
+                seen.add(key)
+                calls.append((method, path, service_name))
+        
+        # Pattern 2: Find direct endpoint variable usage like f"{CARTS_ENDPOINT}/carts"
+        endpoint_var_calls = self._extract_endpoint_var_calls(code, microservices_config)
+        for method, path, service_name in endpoint_var_calls:
+            key = (method, path, service_name)
+            if key not in seen:
+                seen.add(key)
+                calls.append((method, path, service_name))
+        
+        # Pattern 3: Find direct HTTP calls with URLs
         for pattern in self.HTTP_CALL_PATTERNS:
             matches = re.findall(pattern, code, re.IGNORECASE)
             for match in matches:
                 method = match[0].upper()
                 url_or_path = match[1]
                 path = self._extract_path(url_or_path)
+                
                 if path:
-                    calls.add((method, path))
+                    # Try to determine service from URL
+                    service_name = self._extract_service_from_url(url_or_path, microservices_config)
+                    key = (method, path, service_name)
+                    if key not in seen:
+                        seen.add(key)
+                        calls.append((method, path, service_name))
         
-        return list(calls)
+        return calls
+    
+    def _extract_endpoint_var_calls(self, code: str, microservices_config: Dict[str, str]) -> List[Tuple[str, str, str]]:
+        """
+        Extract HTTP calls that use direct endpoint variables like:
+        - requests.get(f"{CARTS_ENDPOINT}/carts/{cart_id}")
+        - requests.post(ORDERS_ENDPOINT + "/orders", json=...)
+        """
+        calls = []
+        
+        # Pattern: requests.method(f"{SERVICE_ENDPOINT}/path" or SERVICE_ENDPOINT + "/path")
+        patterns = [
+            # f-string: requests.get(f"{CARTS_ENDPOINT}/carts")
+            r'requests\.(get|post|put|patch|delete)\s*\(\s*f["\'][^"\']*\{([A-Z_]+_ENDPOINT)\}(/[^"\']*)["\']',
+            # Concatenation: requests.get(CARTS_ENDPOINT + "/carts")
+            r'requests\.(get|post|put|patch|delete)\s*\(\s*([A-Z_]+_ENDPOINT)\s*\+\s*["\'](/[^"\']+)["\']',
+            # Variable then used: url = f"{CARTS_ENDPOINT}/carts" ... requests.get(url)
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, code, re.IGNORECASE)
+            for match in matches:
+                method = match[0].upper()
+                endpoint_var = match[1]
+                path = match[2]
+                
+                # Convert CARTS_ENDPOINT to service name "carts"
+                service_name = endpoint_var.replace('_ENDPOINT', '').lower().replace('_', '-')
+                service_name = service_name.replace('-http', '').replace('-api', '')
+                
+                normalized_path = self._normalize_path(path)
+                calls.append((method, normalized_path, service_name))
+        
+        # Also find variable assignments and their usage
+        # url = f"{SERVICE_ENDPOINT}/path" ... requests.method(url)
+        var_assignments = re.findall(
+            r'(\w+)\s*=\s*f["\'][^"\']*\{([A-Z_]+_ENDPOINT)\}(/[^"\']*)["\']',
+            code
+        )
+        
+        for var_name, endpoint_var, path in var_assignments:
+            # Find how this variable is used
+            method_match = re.search(
+                rf'requests\.(get|post|put|patch|delete)\s*\(\s*{var_name}[,\)]',
+                code, re.IGNORECASE
+            )
+            if method_match:
+                method = method_match.group(1).upper()
+                service_name = endpoint_var.replace('_ENDPOINT', '').lower().replace('_', '-')
+                service_name = service_name.replace('-http', '').replace('-api', '')
+                normalized_path = self._normalize_path(path)
+                calls.append((method, normalized_path, service_name))
+        
+        return calls
+    
+    def _extract_get_url_calls(self, code: str, microservices_config: Dict[str, str]) -> List[Tuple[str, str, str]]:
+        """
+        Extract HTTP calls that use get_url("service", "/path") pattern.
+        Looks for: url = get_url(...) followed by requests.method(url)
+        """
+        calls = []
+        
+        # Find all get_url calls
+        get_url_matches = re.findall(self.GET_URL_PATTERN, code)
+        
+        for service_name, path in get_url_matches:
+            # Find the context around this get_url call to determine HTTP method
+            method = self._find_http_method_for_get_url(code, service_name, path)
+            if method:
+                normalized_path = self._normalize_path(path)
+                calls.append((method, normalized_path, service_name))
+        
+        return calls
+    
+    def _find_http_method_for_get_url(self, code: str, service_name: str, path: str) -> Optional[str]:
+        """Find the HTTP method used with a get_url call"""
+        escaped_service = re.escape(service_name)
+        escaped_path = re.escape(path)
+        
+        # Pattern 1: Direct assignment followed by requests call
+        # url = get_url("service", "/path")
+        # response = requests.get(url)
+        assignment_pattern = rf'(\w+)\s*=\s*get_url\s*\(\s*["\']{ escaped_service }["\']\s*,\s*[f]?["\']{ escaped_path }["\']\s*\)'
+        
+        assignment_match = re.search(assignment_pattern, code)
+        if assignment_match:
+            var_name = assignment_match.group(1)
+            # Look for requests.method(var_name
+            method_pattern = rf'requests\.(get|post|put|patch|delete|head|options)\s*\(\s*{var_name}[,\)]'
+            method_match = re.search(method_pattern, code, re.IGNORECASE)
+            if method_match:
+                return method_match.group(1).upper()
+        
+        # Pattern 2: Inline usage
+        # response = requests.get(get_url("service", "/path"))
+        inline_pattern = rf'requests\.(get|post|put|patch|delete|head|options)\s*\(\s*get_url\s*\(\s*["\']{ escaped_service }["\']\s*,\s*[f]?["\']{ escaped_path }["\']\s*\)'
+        inline_match = re.search(inline_pattern, code, re.IGNORECASE)
+        if inline_match:
+            return inline_match.group(1).upper()
+        
+        # Pattern 3: Look for any requests call near the get_url (within same function)
+        # Find the function containing this get_url
+        func_pattern = rf'def\s+(\w+)[^:]*:.*?get_url\s*\(\s*["\']{ escaped_service }["\']\s*,\s*[f]?["\']{ escaped_path }["\']\s*\)'
+        func_match = re.search(func_pattern, code, re.DOTALL)
+        if func_match:
+            func_name = func_match.group(1)
+            # Extract the function body
+            func_body_pattern = rf'def\s+{func_name}[^:]*:(.*?)(?=\ndef\s|\Z)'
+            func_body_match = re.search(func_body_pattern, code, re.DOTALL)
+            if func_body_match:
+                func_body = func_body_match.group(1)
+                # Find requests calls in this function
+                method_in_func = re.search(r'requests\.(get|post|put|patch|delete|head|options)\s*\(', func_body, re.IGNORECASE)
+                if method_in_func:
+                    return method_in_func.group(1).upper()
+        
+        # Fallback: infer from path patterns
+        path_lower = path.lower()
+        if '/register' in path_lower or '/login' in path_lower or '/cards' in path_lower or '/addresses' in path_lower:
+            return 'POST'
+        if '/delete' in path_lower:
+            return 'DELETE'
+        
+        # Default to GET
+        return 'GET'
+    
+    def _extract_service_from_url(self, url: str, microservices_config: Dict[str, str]) -> Optional[str]:
+        """Extract service name from URL by matching against MICROSERVICES config"""
+        for service_name, base_url in microservices_config.items():
+            if base_url in url or service_name in url.lower():
+                return service_name
+        
+        # Try to extract from URL hostname pattern like "carts.sockshop-core.svc"
+        match = re.search(r'https?://([a-z0-9-]+)\.', url, re.IGNORECASE)
+        if match:
+            return match.group(1)
+        
+        return None
     
     def _extract_path(self, url_or_path: str) -> Optional[str]:
         """Extract path from URL or path string"""
         if not url_or_path:
             return None
         
-        #if it's already a path
+        # If it's already a path
         if url_or_path.startswith('/'):
             return self._normalize_path(url_or_path)
         
-        #extract path from full URL
+        # Extract path from full URL
         match = re.search(r'https?://[^/]+(/[^"\'?\s]*)', url_or_path)
         if match:
             return self._normalize_path(match.group(1))
         
-        #handle f-string variable parts
+        # Handle f-string variable parts
         if '{' in url_or_path:
             # Try to extract the path part
             match = re.search(r'(/[a-zA-Z0-9/_\-{}]+)', url_or_path)
@@ -239,11 +547,11 @@ class CoverageService:
         """Normalize path: replace IDs with {id}, remove query params"""
         path = path.split('?')[0].rstrip('/')
         
-        #replace numeric IDs
+        # Replace numeric IDs
         path = re.sub(r'/\d+(?=/|$)', '/{id}', path)
-        #replace UUIDs
+        # Replace UUIDs
         path = re.sub(r'/[a-f0-9-]{36}(?=/|$)', '/{id}', path)
-        #normalize f-string placeholders
+        # Normalize f-string placeholders like {sock_id}, {user_id}, etc.
         path = re.sub(r'\{[^}]+\}', '{id}', path)
         
         return path
@@ -258,16 +566,18 @@ class CoverageService:
             
             endpoint_path = self._normalize_path(endpoint.path)
             
-            #exact match
+            # Exact match
             if endpoint_path == normalized_path:
                 return endpoint
             
-            #pattern match (path parameters)
+            # Pattern match (path parameters)
             pattern = re.sub(r'\{[^}]+\}', r'[^/]+', endpoint_path)
             if re.match(f'^{pattern}$', normalized_path):
                 return endpoint
         
         return None
+    
+    # ==================== COVERAGE REPORTING ====================
     
     def get_coverage_summary(self, spec_id: Optional[int] = None) -> Dict[str, Any]:
         """Get coverage summary statistics"""
@@ -277,7 +587,7 @@ class CoverageService:
         
         total_endpoints = endpoint_query.count()
         
-        #get covered endpoint IDs
+        # Get covered endpoint IDs
         coverage_query = self.db.query(TestEndpointCoverage.endpoint_id).distinct()
         if spec_id:
             coverage_query = coverage_query.join(Endpoint).filter(Endpoint.spec_id == spec_id)
