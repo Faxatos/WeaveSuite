@@ -130,7 +130,7 @@ export default function TestsPage() {
             setGenerationStatus(null);
             setError('Test generation is taking longer than expected. Please refresh the page to check status.');
           }
-        } catch (err) {
+        } catch {
           // 404 means no tests yet, keep polling
           if (attempts < maxAttempts) {
             setTimeout(pollForTests, pollInterval);

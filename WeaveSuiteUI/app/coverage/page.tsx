@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Types
 interface CoverageSummary {
@@ -59,7 +59,7 @@ export default function CoveragePage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'tests' | 'gaps'>('overview');
 
   // Fetch all coverage data
-  const fetchCoverageData = async () => {
+  const fetchCoverageData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -90,7 +90,7 @@ export default function CoveragePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch tests and their endpoint coverage
   const fetchTestsWithCoverage = async () => {
@@ -202,7 +202,7 @@ export default function CoveragePage() {
 
   useEffect(() => {
     fetchCoverageData();
-  }, []);
+  }, [fetchCoverageData]);
 
   // Method badge color
   const getMethodColor = (method: string) => {
