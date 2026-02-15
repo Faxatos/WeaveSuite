@@ -111,6 +111,142 @@ class GenerationService:
             self.db.rollback()
             logging.error(f"Failed to store template: {str(e)}")
             raise
+
+    def _build_service_config_example(self, microservice_info: Dict) -> str:
+        """
+        Build a MICROSERVICES dict example from actual microservice data.
+        This ensures the LLM uses the correct service names and endpoints.
+        Enforces http:// scheme if missing from endpoint.
+        """
+        lines = []
+        for ms_id, ms_data in microservice_info.items():
+            service_name = ms_data.get("name", "unknown")
+            endpoint = ms_data.get("endpoint", f"http://{service_name}.default.svc.cluster.local:80")
+            # Ensure http:// scheme is present — urljoin requires it
+            if not endpoint.startswith("http://") and not endpoint.startswith("https://"):
+                endpoint = f"http://{endpoint}"
+            lines.append(f'    "{service_name}": "{endpoint}",')
+        
+        return "\n".join(lines) + "\n" if lines else '    # Add service entries here\n'
+
+    def _build_prompt(self, microservice_info: Dict, specs: List[OpenAPISpec]) -> str:
+        """
+        Build the LLM prompt following Gemini 3 best practices:
+        - Direct and concise instructions (no verbose prose)
+        - Consistent XML-style tag structure
+        - Minimal redundancy (Gemini 3 infers obvious rules)
+        - Explicit constraints where ambiguity exists
+
+        Prompt evolution validated via leave-one-out on 3 Kubernetes applications.
+        """
+        service_config_example = self._build_service_config_example(microservice_info)
+
+        payload = {
+            "microservices": microservice_info,
+            "openapi_specs": {str(spec.id): spec.spec for spec in specs}
+        }
+
+        prompt = (
+            "<role>\n"
+            "Expert QA Automation Engineer generating production-ready pytest system tests.\n"
+            "</role>\n\n"
+
+            "<context>\n"
+            "You are given a microservices topology deployed on Kubernetes and their OpenAPI specifications. "
+            "Analyze service relationships, endpoints, methods, request/response schemas, and authentication requirements.\n"
+            "</context>\n\n"
+
+            "<task>\n"
+            "Generate a pytest suite of SYSTEM TESTS that validate the application's end-to-end functionalities "
+            "by exercising real workflows across the microservices.\n\n"
+
+            "System test philosophy:\n"
+            "- Tests that need existing resources MUST first query the live system to obtain real, valid IDs "
+            "(e.g., GET the catalogue to retrieve a real item ID before adding it to a cart, "
+            "GET existing users before creating an order). NEVER invent or hardcode resource IDs, names, "
+            "or payloads that may not exist in the running system.\n"
+            "- For negative/error tests, use clearly invalid data that cannot accidentally match real resources "
+            "(e.g., a nonexistent UUID like '00000000-0000-0000-0000-000000000000', empty strings, wrong types, "
+            "missing required fields).\n"
+            "- When constructing request payloads, include ALL fields defined in the OpenAPI schema for that endpoint. "
+            "Cross-reference the schema definition, not just the data available from previous responses.\n"
+            "- Think in terms of USER WORKFLOWS and FEATURES, not individual endpoints in isolation.\n"
+            "- Each test validates a coherent functional scenario (e.g., browse catalogue then add item to cart, "
+            "register user then place order, etc.).\n"
+            "- Cover both happy-path AND error scenarios for each key functionality.\n"
+            "- Each test MUST be fully independent: create or fetch any prerequisite state at the start of the test. "
+            "Do not rely on execution order or shared state between tests.\n"
+            "- Always include the response body in assertion messages to aid debugging: "
+            "assert resp.status_code == 201, f\"Expected 201, got {resp.status_code}: {resp.text}\"\n"
+            "- When a POST/PUT response contains created resource data (IDs, URIs), extract it directly from the response. "
+            "Do not make a separate GET call to search for a resource you just created.\n"
+            "- When verifying that a resource was created or modified, use the specific endpoint defined in the OpenAPI spec "
+            "for that sub-resource. Do not assume nested/embedded data in parent resource responses unless the schema explicitly includes it.\n"
+            "- For numeric fields (prices, amounts, quantities), test edge cases and boundary values "
+            "(e.g., 0, 1, very small amounts, very large amounts) to uncover undocumented business-rule thresholds. "
+            "Happy-path tests should use small, conservative values to avoid hitting unknown limits.\n"
+            "- Helper functions that create resources (e.g., register user) must return BOTH the API response data "
+            "AND all locally known values (like the username, password, and email used in the request) merged into a single dict, "
+            "so tests do not depend on assumptions about the response body shape. "
+            "Always include every field from the original request payload in the returned dict.\n"
+            "- When parsing API responses, always check the actual type before indexing. If a response could be "
+            "a dict (e.g., HAL/JSON:API with _embedded) or a plain list, handle both cases. "
+            "Never assume a response is a list and index with [0] without verifying, "
+            "and never assume dict keys exist without checking.\n"
+            "</task>\n\n"
+
+            "<constraints>\n"
+            "- Use ONLY: pytest, requests, Python standard library.\n"
+            "- Do NOT use @pytest.mark.parametrize. Write each scenario as a separate test function.\n"
+            "- @pytest.fixture is allowed ONLY for shared setup like authentication or session management. "
+            "Every fixture parameter in a test function signature must correspond to a defined @pytest.fixture function.\n"
+            "- Use the MICROSERVICES dict for all service base URLs (keys = service names from input).\n"
+            "- Use get_url(service, path) for ALL URL construction — never hardcode full URLs or use individual variables.\n"
+            "- All HTTP calls must include timeout=10.\n"
+            "- Naming: test_<service>_<functionality>_<scenario>\n"
+            "  Examples: test_catalogue_list_items_happy, test_carts_add_real_item_happy, test_orders_place_with_invalid_id_error\n"
+            "- Return ONLY a valid JSON object: { \"tests\": \"<full_python_code>\" }\n"
+            "- No markdown, no explanations, no prose outside the JSON.\n"
+            "- Ensure proper JSON string escaping: newlines as \\n, quotes as \\\".\n"
+            "</constraints>\n\n"
+
+            "<code_template>\n"
+            "The generated Python code MUST follow this structure:\n\n"
+            "```python\n"
+            "import pytest\n"
+            "import requests\n"
+            "import uuid\n"
+            "import random\n"
+            "import string\n"
+            "from urllib.parse import urljoin\n\n"
+            "# --- Service Configuration ---\n"
+            "MICROSERVICES = {\n"
+            f"{service_config_example}"
+            "}\n\n"
+            "# --- Helper Functions ---\n"
+            "def get_url(service: str, path: str) -> str:\n"
+            "    \"\"\"Construct full URL for a service endpoint.\"\"\"\n"
+            "    base = MICROSERVICES.get(service)\n"
+            "    if not base:\n"
+            "        raise ValueError(f\"Service {service} not found in configuration\")\n"
+            "    return urljoin(base, path)\n\n"
+            "# Add helper functions that query the live system for real data.\n"
+            "# Helpers must never return hardcoded or invented data.\n\n"
+            "# --- Fixtures ---\n"
+            "# Define @pytest.fixture functions for auth tokens, sessions, etc.\n"
+            "# Tests that need auth should accept the fixture as a parameter.\n\n"
+            "# --- Tests ---\n"
+            "# Each test is a standalone function. No @pytest.mark.parametrize.\n"
+            "# Fixture parameters are allowed (e.g., def test_orders_create_happy(auth_token):).\n"
+            "```\n"
+            "</code_template>\n\n"
+
+            "<input>\n"
+            f"{json.dumps(payload)}\n"
+            "</input>\n"
+        )
+
+        return prompt
             
     def generate_and_store_tests(self) -> Dict[str, Any]:
         """Generate tests from all OpenAPI specs and store them in the database"""
@@ -176,10 +312,6 @@ class GenerationService:
                 result.append(test_data)
             
             return result
-            
-        except Exception as e:
-            logging.error(f"Failed to fetch system tests: {str(e)}")
-            return []
             
         except Exception as e:
             logging.error(f"Failed to fetch system tests: {str(e)}")
@@ -288,67 +420,35 @@ class GenerationService:
                     #just identify there are params without parsing the full structure
                     key_pattern = re.findall(r"['\"]([\w]+)['\"]:", param_body)
                     for key in key_pattern:
-                        endpoint["params"][key] = "..." # Placeholder value
+                        endpoint["params"][key] = "..."
         
-        #logging.debug(f"Final endpoint info: {endpoint}")
         return endpoint
     
     def _generate_with_llm(self, microservice_info: Dict, specs: List[OpenAPISpec]) -> Dict[str, Any]:
-        """Generate test code using Google AI API"""
+        """Generate test code using Google AI API with Gemini 3 optimized prompt"""
         try:
-            #prompt for the LLM
-            intro = (
-                "You are a Expert QA Automation Engineer specializing in Kubernetes-based microservices. Your task is to generate a comprehensive suite of system tests using pytest. "
-                "The test code must be complete (no TODOs, no placeholders), self-contained, and executable 'out-of-the-box' without placeholders or manual modifications."
-                "Name tests test_<gateway_name>_<service>_<path>_<method>, include meaningfull assertions for status codes and response schemas (assert response structure should matches OpenAPI schemas). "
-                "CORE ARCHITECTURAL REQUIREMENTS:\n"
-                "1. ROUTING & TOPOLOGY: Analyze the provided microservices data to identify entry points (Gateways) and internal services. "
-                "Every test must resolve the correct network path. If a gateway is present, route requests through it using the format: "
-                "http://{gateway_endpoint}{routing_prefix}{api_endpoint}. Use absolute URLs inside the test functions.\n"
-                "2. NAMING CONVENTION: Name each test function as: test_<entry_point>_<target_service>_<path_slug>_<method>.\n"
-                "3. DYNAMIC AUTHENTICATION: Inspect the security schemes in each OpenAPI spec. "
-                "If authentication is required (Bearer tokens, API Key, Basic, etc.):\n"
-                "   - Create helper functions or pytest fixtures to obtain valid credentials from the appropriate identity endpoint.\n"
-                "   - Ensure every test requiring auth explicitly accepts the necessary fixture as a parameter.\n"
-                "   - Never hardcode tokens; generate or fetch them dynamically.\n"
-                "4. ROBUST ASSERTIONS: Include assertions for HTTP status codes and validate that the response body structure matches the schema defined in the OpenAPI specification.\n"
-                "5. DATA INTEGRITY: Use realistic, randomized test data for request bodies and query parameters to ensure unique execution cycles.\n\n"
-                
-                "TECHNICAL CONSTRAINTS:\n"
-                "- Return ONLY a valid JSON object.\n"
-                "- Format: { \"tests\": \"<string_containing_full_python_code>\" }\n"
-                "- Do not include markdown code blocks (```json), explanations, or prose.\n"
-                "- Use only standard Python libraries or common testing libraries like 'requests' or 'pytest'."
-            )
-            
-            
-            payload = {
-                "microservices": microservice_info,
-                "openapi_specs": {spec.id: spec.spec for spec in specs}
-            }
+            #build the prompt using the dedicated method
+            full_prompt = self._build_prompt(microservice_info, specs)
 
-            #combine system prompt with payload data
-            full_prompt = f"{intro}\n\nData: {json.dumps(payload)}"
-
-            #complete prompt being sent to LLM
-            logging.info(f"Payload summary:")
-            logging.info(f"  - Microservices count: {len(payload['microservices'])}")
-            logging.info(f"  - OpenAPI specs count: {len(payload['openapi_specs'])}")
+            #log payload summary
+            logging.info("Payload summary:")
+            logging.info(f"  - Microservices count: {len(microservice_info)}")
+            logging.info(f"  - OpenAPI specs count: {len(specs)}")
             
             #log microservice details
             logging.info("Microservices in payload:")
-            for spec_id, ms_info in payload['microservices'].items():
-                logging.info(f"  - Spec ID {spec_id}: {ms_info['name']}/{ms_info['namespace']} ({ms_info['title']})")
+            for ms_id, ms_info in microservice_info.items():
+                logging.info(f"  - ID {ms_id}: {ms_info['name']}/{ms_info['namespace']} ({ms_info['title']})")
             
             #log OpenAPI spec summaries
             logging.info("OpenAPI specs being processed:")
-            for spec_id, spec_data in payload['openapi_specs'].items():
-                spec_title = spec_data.get('info', {}).get('title', 'Unknown')
-                spec_version = spec_data.get('info', {}).get('version', 'Unknown')
-                paths_count = len(spec_data.get('paths', {}))
-                logging.info(f"  - Spec ID {spec_id}: '{spec_title}' v{spec_version} ({paths_count} paths)")
+            for spec in specs:
+                spec_title = spec.spec.get('info', {}).get('title', 'Unknown')
+                spec_version = spec.spec.get('info', {}).get('version', 'Unknown')
+                paths_count = len(spec.spec.get('paths', {}))
+                logging.info(f"  - Spec ID {spec.id}: '{spec_title}' v{spec_version} ({paths_count} paths)")
                 
-                for path, methods in spec_data.get('paths', {}).items():
+                for path, methods in spec.spec.get('paths', {}).items():
                     for method in methods.keys():
                         if method.upper() in ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']:
                             logging.info(f"    - {method.upper()} {path}")
@@ -370,7 +470,7 @@ class GenerationService:
 
             content = response.text
 
-            logging.info(f"Response received successfully")
+            logging.info("Response received successfully")
             logging.info(f"Raw response length: {len(content)} characters")
             
             #strip markdown fences if present
@@ -410,7 +510,7 @@ class GenerationService:
                                 
                                 test_names = re.findall(r'def (test_[^\(]+)', value)
                                 if test_names:
-                                    logging.info(f"    Generated test functions:")
+                                    logging.info("    Generated test functions:")
                                     for test_name in test_names:
                                         logging.info(f"      - {test_name}")
                             else:
