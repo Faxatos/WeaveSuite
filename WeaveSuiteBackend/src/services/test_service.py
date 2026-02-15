@@ -298,13 +298,15 @@ class TestService:
             logging.error(f"Test execution timed out for {test_name}")
             return {
                 "status": "error",
-                "error_message": "Test execution timed out after 5 minutes"
+                "error_message": "Test execution timed out after 5 minutes",
+                "execution_time": 0
             }
         except Exception as e:
             logging.error(f"Failed to execute pytest for {test_name}: {str(e)}")
             return {
                 "status": "error",
-                "error_message": f"Failed to execute test: {str(e)}"
+                "error_message": f"Failed to execute test: {str(e)}",
+                "execution_time": 0
             }
         finally:
             #clean up temporary file
@@ -334,6 +336,158 @@ class TestService:
         except Exception as e:
             raise Exception(f"Unable to create temporary test file: {str(e)}")
 
+    def _extract_error_message(self, stdout: str, stderr: str) -> str:
+        """
+        Extract a meaningful error message from pytest output.
+        
+        Priority order:
+        1. "E   " lines from the FAILURES section (assertion errors, exceptions)
+        2. Collection errors (e.g., "function uses no argument 'prefix'")
+        3. "short test summary info" section content
+        4. Connection errors from traceback
+        5. Special error types (ImportError, SyntaxError, ModuleNotFoundError)
+        6. Filtered fallback from last meaningful lines
+        """
+        combined = stdout + "\n" + stderr
+        
+        #extract "E   " lines from FAILURES section
+        #these contain the actual assertion/exception messages
+        failures_match = re.search(
+            r'={3,}\s*FAILURES\s*={3,}(.*?)(?:={3,}\s*short test summary|={3,}\s*\d+\s*(?:failed|passed|error))',
+            combined,
+            re.DOTALL
+        )
+        if failures_match:
+            failures_block = failures_match.group(1)
+            
+            #extract all "E   " prefixed lines (pytest error lines)
+            e_lines = re.findall(r'^\s*E\s+(.+)$', failures_block, re.MULTILINE)
+            
+            if e_lines:
+                #clean up the lines: remove internal pytest decorations
+                cleaned_lines = []
+                for line in e_lines:
+                    line = line.strip()
+                    #skip all "+  where" expansion lines - they contain object memory
+                    #addresses and internal repr that are noise in error messages.
+                    #the actual assertion line already contains the key info.
+                    if line.startswith('+') and 'where' in line:
+                        continue
+                    cleaned_lines.append(line)
+                
+                if cleaned_lines:
+                    error_msg = " | ".join(cleaned_lines)
+                    # Simplify connection errors that appear as E lines
+                    conn_simplify = re.match(
+                        r'requests\.exceptions\.(\w+Error):\s*\w+Pool\(host=[\'"]([^\'"]+)[\'"].*?Caused by \w+\(["\'].*?:\s*(.+?)["\']',
+                        error_msg
+                    )
+                    if conn_simplify:
+                        error_msg = f"{conn_simplify.group(1)}: {conn_simplify.group(2)} - {conn_simplify.group(3).rstrip(')')}"
+                    return error_msg[:500]
+        
+        #collection errors
+        #e.g., "In test_xxx: function uses no argument 'prefix'"
+        #These appear in the ERRORS section, not FAILURES
+        errors_match = re.search(
+            r'={3,}\s*ERRORS\s*={3,}(.*?)(?:={3,}\s*short test summary|={3,}\s*\d+\s*(?:failed|passed|error))',
+            combined,
+            re.DOTALL
+        )
+        if errors_match:
+            errors_block = errors_match.group(1)
+            #look for collection error messages
+            collection_errors = re.findall(r'^\s*E\s+(.+)$', errors_block, re.MULTILINE)
+            if collection_errors:
+                cleaned = [line.strip() for line in collection_errors 
+                          if line.strip() and not re.match(r'^[=\-]{3,}$', line.strip())]
+                if cleaned:
+                    return " | ".join(cleaned)[:500]
+            
+            #fallback: look for descriptive lines in error block
+            meaningful_lines = []
+            for line in errors_block.split('\n'):
+                line = line.strip()
+                if line and not re.match(r'^[=\-_]{3,}$', line) and not line.startswith('_'):
+                    #skip section headers like "___ ERROR collecting ... ___"
+                    if not re.match(r'^_+\s.*\s_+$', line):
+                        meaningful_lines.append(line)
+            if meaningful_lines:
+                return " | ".join(meaningful_lines[-3:])[:500]
+        
+        #short test summary info
+        summary_match = re.search(
+            r'={3,}\s*short test summary info\s*={3,}\s*\n(.*?)(?:={3,}|\Z)',
+            combined,
+            re.DOTALL
+        )
+        if summary_match:
+            summary_lines = summary_match.group(1).strip().split('\n')
+            #filter out just "FAILED path::test_name" lines with no detail
+            detailed_lines = []
+            for line in summary_lines:
+                line = line.strip()
+                if line and not re.match(r'^FAILED\s+\S+::\S+\s*$', line):
+                    #has more than just the test path
+                    detailed_lines.append(line)
+            
+            if detailed_lines:
+                return " | ".join(detailed_lines)[:500]
+        
+        #connection errors
+        conn_match = re.search(
+            r'(requests\.exceptions\.\w+Error:\s*.+?)(?:\n\n|\Z)',
+            combined,
+            re.DOTALL
+        )
+        if conn_match:
+            error_text = conn_match.group(1).strip()
+            #simplify long connection error messages
+            #extract just the key info: error type + host + reason
+            simple_match = re.match(
+                r'(requests\.exceptions\.\w+Error):\s*\w+\(host=[\'"]([^\'"]+)[\'"].*?:\s*(.+?)(?:\)|\Z)',
+                error_text,
+                re.DOTALL
+            )
+            if simple_match:
+                err_type = simple_match.group(1).split('.')[-1]
+                host = simple_match.group(2)
+                reason = simple_match.group(3).strip()
+                #clean up nested "Caused by" chains
+                caused_by = re.search(r'Caused by (\w+Error)\(', reason)
+                if caused_by:
+                    reason = caused_by.group(1)
+                return f"{err_type}: {host} - {reason}"[:500]
+            return error_text[:500]
+        
+        #special error types
+        for error_type in ['ImportError', 'SyntaxError', 'ModuleNotFoundError', 'NameError', 'TypeError']:
+            type_match = re.search(rf'{error_type}:\s*(.+?)(?:\n|$)', combined)
+            if type_match:
+                return f"{error_type}: {type_match.group(1).strip()}"[:500]
+        
+        #pytest.fail() messages
+        fail_match = re.search(r'Failed:\s*(.+?)(?:\n|$)', combined)
+        if fail_match:
+            return f"Failed: {fail_match.group(1).strip()}"[:500]
+        
+        #fallback - last meaningful lines
+        lines = combined.strip().split('\n')
+        meaningful = [
+            line.strip() for line in lines
+            if line.strip() 
+            and not re.match(r'^[=\-]{3,}', line.strip())
+            and 'FAILED' not in line 
+            and 'PASSED' not in line
+            and 'collecting' not in line
+            and 'test session starts' not in line
+            and '::' not in line  # Skip file path lines
+        ]
+        if meaningful:
+            return " | ".join(meaningful[-3:])[:500]
+        
+        return "Test failed (see logs for details)"
+
     def _parse_pytest_output(self, stdout: str, stderr: str, return_code: int) -> Dict[str, Any]:
         """Parse pytest output to determine test results"""
         try:
@@ -348,54 +502,29 @@ class TestService:
             execution_time = self._extract_pytest_execution_time(stdout)
             result["execution_time"] = execution_time
 
-            #check return code first
-            if return_code == 0:
+            #determine status from return code
+            # pytest return codes: 0=all passed, 1=some failed, 2=interrupted/error,
+            # 3=internal error, 4=usage error, 5=no tests collected
+            if return_code == 0 and "PASSED" in stdout:
                 result["status"] = "passed"
                 result["error_message"] = None
+                return result
             elif return_code == 1:
+                #test failures (assertions, exceptions during test)
                 result["status"] = "failed"
+            elif return_code == 2:
+                #interrupted or collection error
+                result["status"] = "error"
+            elif return_code == 5:
+                #no tests collected
+                result["status"] = "error"
+                result["error_message"] = "No tests were collected - possible collection error"
             else:
                 result["status"] = "error"
 
-            #parse output for more detailed information
-            combined_output = stdout + "\n" + stderr
-
-            if "PASSED" in stdout and return_code == 0:
-                result["status"] = "passed"
-                result["error_message"] = None
-            elif "FAILED" in stdout:
-                result["status"] = "failed"
-                failure_match = re.search(r'FAILED.*?(?=\n|$)', combined_output)
-                if failure_match:
-                    result["error_message"] = failure_match.group(0)
-                else:
-                    result["error_message"] = "Test failed (see logs for details)"
-            elif "ERROR" in combined_output or return_code > 1:
-                result["status"] = "error"
-                if stderr.strip():
-                    result["error_message"] = stderr.strip()[:500]  # Limit error message length
-                elif "ERROR" in stdout:
-                    error_match = re.search(r'ERROR.*?(?=\n|$)', stdout)
-                    if error_match:
-                        result["error_message"] = error_match.group(0)
-                    else:
-                        result["error_message"] = "Test execution error (see logs for details)"
-
-            if "ImportError" in combined_output:
-                result["status"] = "error"
-                result["error_message"] = "Import error - missing dependencies or incorrect imports"
-            elif "SyntaxError" in combined_output:
-                result["status"] = "error"
-                result["error_message"] = "Syntax error in test code"
-            elif "ModuleNotFoundError" in combined_output:
-                result["status"] = "error"
-                result["error_message"] = "Module not found - missing dependencies"
-
-            if not result.get("error_message") and result["status"] != "passed":
-                #extract last few lines of output as error message
-                lines = combined_output.strip().split('\n')
-                if lines:
-                    result["error_message"] = '\n'.join(lines[-3:])[:500]
+            #extract meaningful error message for non-passing tests
+            if result["status"] != "passed":
+                result["error_message"] = self._extract_error_message(stdout, stderr)
 
             logging.debug(f"Parsed pytest results: {result}")
             return result
