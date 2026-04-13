@@ -131,12 +131,6 @@ class GenerationService:
 
     def _build_prompt(self, microservice_info: Dict, specs: List[OpenAPISpec]) -> str:
         """
-        Build the LLM prompt following Gemini 3 best practices:
-        - Direct and concise instructions (no verbose prose)
-        - Consistent XML-style tag structure
-        - Minimal redundancy (Gemini 3 infers obvious rules)
-        - Explicit constraints where ambiguity exists
-
         Prompt evolution validated via leave-one-out on 3 Kubernetes applications.
         """
         service_config_example = self._build_service_config_example(microservice_info)
@@ -148,63 +142,48 @@ class GenerationService:
 
         prompt = (
             "<role>\n"
-            "Expert QA Automation Engineer generating production-ready pytest system tests.\n"
+            "Expert QA Automation Engineer generating pytest system tests.\n"
             "</role>\n\n"
 
             "<context>\n"
-            "You are given a microservices topology deployed on Kubernetes and their OpenAPI specifications. "
-            "Analyze service relationships, endpoints, methods, request/response schemas, and authentication requirements.\n"
+            "You are given a microservices topology deployed on Kubernetes "
+            "and their OpenAPI specifications.\n"
             "</context>\n\n"
 
             "<task>\n"
-            "Generate a pytest suite of SYSTEM TESTS that validate the application's end-to-end functionalities "
-            "by exercising real workflows across the microservices.\n\n"
+            "Generate a pytest suite of system tests that validate the application's "
+            "end-to-end functionalities by exercising real workflows across the microservices.\n"
 
-            "System test philosophy:\n"
-            "- Tests that need existing resources MUST first query the live system to obtain real, valid IDs "
-            "(e.g., GET the catalogue to retrieve a real item ID before adding it to a cart, "
-            "GET existing users before creating an order). NEVER invent or hardcode resource IDs, names, "
-            "or payloads that may not exist in the running system.\n"
-            "- For negative/error tests, use clearly invalid data that cannot accidentally match real resources "
-            "(e.g., a nonexistent UUID like '00000000-0000-0000-0000-000000000000', empty strings, wrong types, "
-            "missing required fields).\n"
-            "- When constructing request payloads, include ALL fields defined in the OpenAPI schema for that endpoint. "
-            "Cross-reference the schema definition, not just the data available from previous responses.\n"
-            "- Think in terms of USER WORKFLOWS and FEATURES, not individual endpoints in isolation.\n"
-            "- Each test validates a coherent functional scenario (e.g., browse catalogue then add item to cart, "
-            "register user then place order, etc.).\n"
-            "- Cover both happy-path AND error scenarios for each key functionality.\n"
-            "- Each test MUST be fully independent: create or fetch any prerequisite state at the start of the test. "
-            "Do not rely on execution order or shared state between tests.\n"
-            "- Always include the response body in assertion messages to aid debugging: "
-            "assert resp.status_code == 201, f\"Expected 201, got {resp.status_code}: {resp.text}\"\n"
-            "- When a POST/PUT response contains created resource data (IDs, URIs), extract it directly from the response. "
-            "Do not make a separate GET call to search for a resource you just created.\n"
-            "- When verifying that a resource was created or modified, use the specific endpoint defined in the OpenAPI spec "
-            "for that sub-resource. Do not assume nested/embedded data in parent resource responses unless the schema explicitly includes it.\n"
-            "- For numeric fields (prices, amounts, quantities), test edge cases and boundary values "
-            "(e.g., 0, 1, very small amounts, very large amounts) to uncover undocumented business-rule thresholds. "
-            "Happy-path tests should use small, conservative values to avoid hitting unknown limits.\n"
-            "- Helper functions that create resources (e.g., register user) must return BOTH the API response data "
-            "AND all locally known values (like the username, password, and email used in the request) merged into a single dict, "
-            "so tests do not depend on assumptions about the response body shape. "
-            "Always include every field from the original request payload in the returned dict.\n"
-            "- When parsing API responses, always check the actual type before indexing. If a response could be "
-            "a dict (e.g., HAL/JSON:API with _embedded) or a plain list, handle both cases. "
-            "Never assume a response is a list and index with [0] without verifying, "
-            "and never assume dict keys exist without checking.\n"
+            "- Tests that need existing resources must first query the live system or create them if they do not exists,"
+            "to obtain real, valid IDs. Never invent or hardcode resource IDs, names, or URIs \n"
+
+            "- When a POST creates a resource, extract the resource ID from the response body. Construct subsequent URLs for that resource "
+            "using get_url() with the same service name and the path pattern from that service's OpenAPI spec. "
+            "If the ID is not in the response body, query the same service's list/search endpoint to find it. "
+            "Never manually construct a resource path that does not appear in the OpenAPI spec.\n"
+
+            "- When a test creates prerequisite resources as setup for a later action, "
+            "it must assert that each creation step succeeded before proceeding. \n"
+
+            "- Each test must assert a single expected success status code (e.g., 200, 201). "
+            "Never assert against multiple status codes or accept error codes as passing.\n"
+
+            "- When the architecture includes an API gateway, route all test requests through the gateway "
+            "using the gateway's URL and the full gateway paths. Do not call internal microservices directly.\n"
+
+            "- When OpenAPI specs define security schemes, tests must authenticate before calling protected endpoints. "
+            "Use the authentication mechanism described in the spec: call the login/signup endpoint if one exists, "
+            "or use Basic auth credentials, as defined in the security requirements.\n"
             "</task>\n\n"
 
             "<constraints>\n"
             "- Use ONLY: pytest, requests, Python standard library.\n"
-            "- Do NOT use @pytest.mark.parametrize. Write each scenario as a separate test function.\n"
-            "- @pytest.fixture is allowed ONLY for shared setup like authentication or session management. "
-            "Every fixture parameter in a test function signature must correspond to a defined @pytest.fixture function.\n"
-            "- Use the MICROSERVICES dict for all service base URLs (keys = service names from input).\n"
-            "- Use get_url(service, path) for ALL URL construction — never hardcode full URLs or use individual variables.\n"
+            "- Use the MICROSERVICES dict for all service base URLs.\n"
+            "- Use get_url(service, path) for all URL construction.\n"
             "- All HTTP calls must include timeout=10.\n"
-            "- Naming: test_<service>_<functionality>_<scenario>\n"
-            "  Examples: test_catalogue_list_items_happy, test_carts_add_real_item_happy, test_orders_place_with_invalid_id_error\n"
+            "Include the response body in the assertion message: "
+            "assert resp.status_code == expected_code, f\"Expected expected_code, got {resp.status_code}: {resp.text}\"\n"
+            "- Naming: test_<service>_<functionality>\n"
             "- Return ONLY a valid JSON object: { \"tests\": \"<full_python_code>\" }\n"
             "- No markdown, no explanations, no prose outside the JSON.\n"
             "- Ensure proper JSON string escaping: newlines as \\n, quotes as \\\".\n"
@@ -219,25 +198,15 @@ class GenerationService:
             "import random\n"
             "import string\n"
             "from urllib.parse import urljoin\n\n"
-            "# --- Service Configuration ---\n"
             "MICROSERVICES = {\n"
             f"{service_config_example}"
             "}\n\n"
-            "# --- Helper Functions ---\n"
             "def get_url(service: str, path: str) -> str:\n"
-            "    \"\"\"Construct full URL for a service endpoint.\"\"\"\n"
             "    base = MICROSERVICES.get(service)\n"
             "    if not base:\n"
-            "        raise ValueError(f\"Service {service} not found in configuration\")\n"
+            "        raise ValueError(f\"Service {service} not found\")\n"
             "    return urljoin(base, path)\n\n"
-            "# Add helper functions that query the live system for real data.\n"
-            "# Helpers must never return hardcoded or invented data.\n\n"
-            "# --- Fixtures ---\n"
-            "# Define @pytest.fixture functions for auth tokens, sessions, etc.\n"
-            "# Tests that need auth should accept the fixture as a parameter.\n\n"
             "# --- Tests ---\n"
-            "# Each test is a standalone function. No @pytest.mark.parametrize.\n"
-            "# Fixture parameters are allowed (e.g., def test_orders_create_happy(auth_token):).\n"
             "```\n"
             "</code_template>\n\n"
 
@@ -458,7 +427,7 @@ class GenerationService:
 
             #generate content using Google AI
             config = types.GenerateContentConfig(
-                temperature=0.2,
+                temperature=0,
                 max_output_tokens=64000,
             )
 
