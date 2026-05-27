@@ -39,7 +39,7 @@ class GenerationService:
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
         self.client = genai.Client(api_key=api_key)
-        self.model_name = 'gemini-3-pro-preview'
+        self.model_name = 'gemini-3.1-pro-preview'
 
     def _extract_microservices_info(self, valid_ms_ids: List[int]) -> Dict:
         """Extract microservice information including endpoints from database"""
@@ -151,29 +151,31 @@ class GenerationService:
             "</context>\n\n"
 
             "<task>\n"
-            "Generate a pytest suite of system tests that validate the application's "
+            "- Generate a pytest suite of system tests that validate the application's "
             "end-to-end functionalities by exercising real workflows across the microservices.\n"
 
-            "- Tests that need existing resources must first query the live system or create them if they do not exists,"
-            "to obtain real, valid IDs. Never invent or hardcode resource IDs, names, or URIs \n"
+            "- Tests that need existing resources must first query the live system or create them if they do not exist, "
+            "to obtain real, valid IDs. Never invent or hardcode resource IDs, names, or URIs; "
+            "these must always come from a prior response or be created beforehand.\n"
 
-            "- When a POST creates a resource, extract the resource ID from the response body. Construct subsequent URLs for that resource "
-            "using get_url() with the same service name and the path pattern from that service's OpenAPI spec. "
-            "If the ID is not in the response body, query the same service's list/search endpoint to find it. "
+            "- When a POST creates a resource, prefer using any self-referencing link returned in the response as the resource URI. "
+            "If no self-link is available, retrieve the resource from the same path used to create or list it and extract the URI from there. "
             "Never manually construct a resource path that does not appear in the OpenAPI spec.\n"
 
             "- When a test creates prerequisite resources as setup for a later action, "
-            "it must assert that each creation step succeeded before proceeding. \n"
+            "it must assert that each creation step succeeded before proceeding.\n"
 
-            "- Each test must assert a single expected success status code (e.g., 200, 201). "
-            "Never assert against multiple status codes or accept error codes as passing.\n"
+            "- Each test must assert exactly one expected status code (never multiple). "
+            "Where applicable, additionally assert on specific response body fields that confirm the operation's semantics"
+            "(returned IDs, persisted values, required fields present, expected status/state strings, and the absence of secret fields).\n"
 
-            "- When the architecture includes an API gateway, route all test requests through the gateway "
-            "using the gateway's URL and the full gateway paths. Do not call internal microservices directly.\n"
+            "- When the architecture includes an API gateway, route all test requests through the gateway using the gateway's URL "
+            "and the full gateway paths. Do not call microservices directly.\n"
 
             "- When OpenAPI specs define security schemes, tests must authenticate before calling protected endpoints. "
             "Use the authentication mechanism described in the spec: call the login/signup endpoint if one exists, "
-            "or use Basic auth credentials, as defined in the security requirements.\n"
+            " or use Basic auth credentials, as defined in the security requirements."
+
             "</task>\n\n"
 
             "<constraints>\n"
@@ -181,7 +183,7 @@ class GenerationService:
             "- Use the MICROSERVICES dict for all service base URLs.\n"
             "- Use get_url(service, path) for all URL construction.\n"
             "- All HTTP calls must include timeout=10.\n"
-            "Include the response body in the assertion message: "
+            "- Include the response body in the assertion message: "
             "assert resp.status_code == expected_code, f\"Expected expected_code, got {resp.status_code}: {resp.text}\"\n"
             "- Naming: test_<service>_<functionality>\n"
             "- Return ONLY a valid JSON object: { \"tests\": \"<full_python_code>\" }\n"
@@ -427,8 +429,8 @@ class GenerationService:
 
             #generate content using Google AI
             config = types.GenerateContentConfig(
-                temperature=0,
-                max_output_tokens=64000,
+                temperature=0.2,
+                max_output_tokens=128000,
             )
 
             response = self.client.models.generate_content(
