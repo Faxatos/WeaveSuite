@@ -52,9 +52,9 @@ async def startup_event():
         SpecService(db).fetch_and_store_specs()
 
         #generate tests on first execution
-        tests_exist = db.query(Test).first() is not None
-        if not tests_exist:
-            GenerationService(db).generate_and_store_tests()
+        # tests_exist = db.query(Test).first() is not None
+        # if not tests_exist:
+        #     GenerationService(db).generate_and_store_tests()
 
 
 @app.get("/api/specs")

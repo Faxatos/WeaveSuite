@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 
 from db.models import OpenAPISpec, Test, Microservice, TestTemplate
 
+from patches import patched_spec
+
 #logging config
 logging.basicConfig(
     level=logging.DEBUG,  # Set to DEBUG to see all logs
@@ -137,7 +139,11 @@ class GenerationService:
 
         payload = {
             "microservices": microservice_info,
-            "openapi_specs": {str(spec.id): spec.spec for spec in specs}
+            #"openapi_specs": {str(spec.id): spec.spec for spec in specs} 
+            "openapi_specs": {
+                str(spec.id): patched_spec(spec.spec)
+                for spec in specs
+            }
         }
 
         prompt = (
@@ -147,7 +153,7 @@ class GenerationService:
 
             "<context>\n"
             "You are given a microservices topology deployed on Kubernetes "
-            "and their OpenAPI specifications.\n"
+            "and their OpenAPI specifications.\n"   
             "</context>\n\n"
 
             "<task>\n"
@@ -158,25 +164,44 @@ class GenerationService:
             "to obtain real, valid IDs. Never invent or hardcode resource IDs, names, or URIs; "
             "these must always come from a prior response or be created beforehand.\n"
 
+            "- When OpenAPI specs define security schemes, tests must authenticate before calling protected endpoints. "
+            "Use the authentication mechanism described in the spec: call the login/signup endpoint if one exists, "
+            "or use Basic auth credentials, as defined in the security requirements.\n"
+
             "- When a POST creates a resource, prefer using any self-referencing link returned in the response as the resource URI. "
             "If no self-link is available, retrieve the resource from the same path used to create or list it and extract the URI from there. "
             "Never manually construct a resource path that does not appear in the OpenAPI spec.\n"
 
-            "- When a test creates prerequisite resources as setup for a later action, "
-            "it must assert that each creation step succeeded before proceeding.\n"
+            "- Every state-changing operation in a test (POST, PUT, PATCH, DELETE), whether it is the action under test or a setup step for a later action, "
+            "requires two verifications: an assertion on the response itself that the spec's documented expected status was returned; "
+            "a follow-up GET on the resource (or its listing endpoint) asserting the strongest post-condition the specification supports."
+            "Never assume REST conventions that the spec does not reflect.\n"
+
+            "- In that follow-up verification, assert the full observable consequence of the operation: the exact value of every field the operation determines, "
+            "the relationships the specification implies between fields of a response and between the resources the operation affects, and how every quantity it changes relates to the value read beforehand. "
+            "Use weaker assertions (direction of change, mere presence) only where the specification does not determine the exact result.\n"
 
             "- Each test must assert exactly one expected status code (never multiple). "
-            "Where applicable, additionally assert on specific response body fields that confirm the operation's semantics"
+            "Where applicable, additionally assert on specific response body fields that confirm the operation's semantics "
             "(returned IDs, persisted values, required fields present, expected status/state strings, and the absence of secret fields).\n"
 
+            "- System tests should cover not only successful workflows but also realistic failure conditions. Include negative tests that exercise documented error paths declared in the OpenAPI spec. "
+            "A negative test must establish the same realistic context as a positive workflow before triggering the error: "
+            "when the error is reached from a specific resource state, the test must reach that state through documented operations rather than starting from an invented identifier or empty state.\n"
+
+            "- When choosing which failure conditions to cover, apply boundary-value and error-guessing principles: exercise each operation's documented preconditions and limits, including inputs at and just past those limits, "
+            "asserting the specific error response the specification declares for each.\n"
+
+            "- Generate a conflict or repetition case for an operation only when the specification documents a constraint that makes repetition observable: "
+            "a uniqueness or state precondition, or a declared conflict/error response. Whenever such a constraint is documented, exercise it: "
+            "perform the operation, then repeat it with input that violates the documented constraint and assert exactly the error response the specification declares. "
+            "Otherwise, do not assume an operation is idempotent or deduplicating: treat a repeated create as a second independent resource with its own identifier, not a no-op.\n"
+            
             "- When the architecture includes an API gateway, route all test requests through the gateway using the gateway's URL "
             "and the full gateway paths. Do not call microservices directly.\n"
 
-            "- When OpenAPI specs define security schemes, tests must authenticate before calling protected endpoints. "
-            "Use the authentication mechanism described in the spec: call the login/signup endpoint if one exists, "
-            " or use Basic auth credentials, as defined in the security requirements."
-
             "</task>\n\n"
+
 
             "<constraints>\n"
             "- Use ONLY: pytest, requests, Python standard library.\n"
@@ -227,10 +252,16 @@ class GenerationService:
             if not specs:
                 logging.warning("No OpenAPI specs found in database")
                 return {"status": "error", "message": "No OpenAPI specs found in database"}
-            
+
             #microservice infos for the prompt
             ms_ids_with_specs = [spec.microservice_id for spec in specs]
             microservice_info = self._extract_microservices_info(ms_ids_with_specs)
+
+            #keep only real OpenAPI specs (exclude Swagger UI configs, empty specs, etc.)
+            specs = [
+                s for s in specs
+                if isinstance(s.spec, dict) and ("openapi" in s.spec or "swagger" in s.spec)
+            ]
 
             #generate via LLM!
             response_data = self._generate_with_llm(microservice_info, specs)
@@ -430,7 +461,7 @@ class GenerationService:
             #generate content using Google AI
             config = types.GenerateContentConfig(
                 temperature=0.2,
-                max_output_tokens=128000,
+                max_output_tokens=65536,
             )
 
             response = self.client.models.generate_content(
