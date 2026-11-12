@@ -1,0 +1,13 @@
+diff --git a/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/interfaces/InteractionLogInformationHolder.java b/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/interfaces/InteractionLogInformationHolder.java
+index b0e0f10..785a239 100644
+--- a/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/interfaces/InteractionLogInformationHolder.java
++++ b/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/interfaces/InteractionLogInformationHolder.java
+@@ -56,7 +56,7 @@ public class InteractionLogInformationHolder {
+ 			@Parameter(description = "the customer's unique id", required = true) @PathVariable CustomerId customerId) {
+ 		final String customerIdStr = customerId.getId();
+ 		Optional<InteractionLogAggregateRoot> optInteractionLog = interactionLogRepository.findById(customerIdStr);
+-		if (!optInteractionLog.isPresent()) {
++		if (optInteractionLog.isPresent()) {
+ 			logger.info("Failed to find an interaction log for the customer with id '" + customerId.toString() + "'. Returning an empty interaction log instead.");
+ 			final InteractionLogAggregateRoot emptyInteractionLog = new InteractionLogAggregateRoot(customerIdStr, "", null, new ArrayList<>());
+ 			return ResponseEntity.ok(emptyInteractionLog);

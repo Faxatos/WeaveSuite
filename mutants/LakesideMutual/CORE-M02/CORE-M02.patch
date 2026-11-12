@@ -1,0 +1,13 @@
+diff --git a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/configuration/APIKeyAuthenticationManager.java b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/configuration/APIKeyAuthenticationManager.java
+index 009fc99..6704bb8 100644
+--- a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/configuration/APIKeyAuthenticationManager.java
++++ b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/configuration/APIKeyAuthenticationManager.java
+@@ -63,7 +63,7 @@ public class APIKeyAuthenticationManager implements AuthenticationManager {
+ 		}
+ 
+ 		final String apiKey = principal.substring(bearerPrefix.length());
+-		if(!validAPIKeys.contains(apiKey)) {
++		if(validAPIKeys.contains(apiKey)) {
+ 			throw new BadCredentialsException("Invalid API Key");
+ 		}
+ 

@@ -1,0 +1,16 @@
+# Mutant: ORDERS-M01
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/orders-core/src/main/java/io/helidon/examples/sockshop/orders/OrderResource.java
++++ b/orders-core/src/main/java/io/helidon/examples/sockshop/orders/OrderResource.java
+@@ -53,7 +53,7 @@
+     @Override
+     public Response getOrdersForCustomer(String customerId) {
+         Collection<? extends Order> customerOrders = orders.findOrdersByCustomer(customerId);
+-        if (customerOrders.isEmpty()) {
++        if (!customerOrders.isEmpty()) {
+             return Response.status(NOT_FOUND).build();
+         }
+         return wrap(customerOrders);

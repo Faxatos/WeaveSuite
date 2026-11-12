@@ -1,0 +1,11 @@
+--- a/wallet/wallet-service/src/main/java/pro/teamlead/kubepay/wallet/application/WalletApplicationService.java
++++ b/wallet/wallet-service/src/main/java/pro/teamlead/kubepay/wallet/application/WalletApplicationService.java
+@@ -28,7 +28,7 @@
+         Optional<Wallet> walletOptional = walletService.findByUser(user.getUser());
+         Wallet wallet = walletOptional.orElseGet(() ->
+                 walletService.createWallet(user.getUser(), BigDecimal.ZERO));
+-        return new WalletInfo(wallet.getAddress(), wallet.getBalance());
++        return new WalletInfo(wallet.getAddress(), BigDecimal.ZERO);
+     }
+ 
+     public WalletInfo createWallet(CreateWalletRequest request) {

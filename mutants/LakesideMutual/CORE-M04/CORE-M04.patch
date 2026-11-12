@@ -1,0 +1,13 @@
+diff --git a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java
+index 77d4d9d..f29be29 100644
+--- a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java
++++ b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java
+@@ -268,7 +268,7 @@ public class CustomerInformationHolder {
+ 		final CustomerProfileEntity updatedCustomerProfile = requestDto.toDomainObject();
+ 
+ 		Optional<CustomerAggregateRoot> optCustomer = customerService.updateCustomerProfile(customerId, updatedCustomerProfile);
+-		if(!optCustomer.isPresent()) {
++		if(optCustomer.isPresent()) {
+ 			final String errorMessage = "Failed to find a customer with id '" + customerId.toString() + "'.";
+ 			logger.info(errorMessage);
+ 			throw new CustomerNotFoundException(errorMessage);

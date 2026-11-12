@@ -1,0 +1,16 @@
+# Mutant: CARTS-M04
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Cart.java
++++ b/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Cart.java
+@@ -93,7 +93,7 @@
+     public Item add(Item item) {
+         Item existing = getItem(item.getItemId());
+         if (existing != null) {
+-            return existing.incrementQuantity(item.getQuantity());
++            return existing.setQuantity(item.getQuantity());
+         }
+         else {
+             items.add(item.setCart(this));

@@ -1,0 +1,13 @@
+diff --git a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java
+index 4987714..cd49efd 100644
+--- a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java
++++ b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java
+@@ -56,7 +56,7 @@ public class RiskComputationService {
+ 	private int computeRiskFactor(int age, String postalCode) {
+ 		int ageGroupRiskFactor = computeAgeGroupRiskFactor(age);
+ 		int localityRiskFactor = computeLocalityRiskFactor(postalCode);
+-		return (ageGroupRiskFactor + localityRiskFactor) / 2;
++		return (ageGroupRiskFactor - localityRiskFactor) / 2;
+ 	}
+ 
+ 	private int computeAgeGroupRiskFactor(int age) {

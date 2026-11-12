@@ -1,0 +1,13 @@
+diff --git a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java
+index 4987714..94bece4 100644
+--- a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java
++++ b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/RiskComputationService.java
+@@ -80,7 +80,7 @@ public class RiskComputationService {
+ 	private int computeLocalityRiskFactor(String postalCodeStr) {
+ 		try {
+ 			int postalCode = Integer.parseInt(postalCodeStr);
+-			if((postalCode >= 8000 && postalCode < 9000) || (postalCode >= 1000 && postalCode < 2000)) {
++			if((postalCode >= 8000 && postalCode < 9000) && (postalCode >= 1000 && postalCode < 2000)) {
+ 				return 80;
+ 			} else if(postalCode >= 5000 && postalCode < 6000) {
+ 				return 10;

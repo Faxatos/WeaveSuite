@@ -1,0 +1,13 @@
+diff --git a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
+index 16776e2..e9389f4 100644
+--- a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
++++ b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
+@@ -93,7 +93,7 @@ public class InsuranceQuoteRequestCoordinator {
+ 
+ 		InsuranceQuoteRequestAggregateRoot insuranceQuoteRequest = optInsuranceQuoteRequest.get();
+ 		CustomerId loggedInCustomerId = userLoginRepository.findByEmail(authentication.getName()).getCustomerId();
+-		if (!insuranceQuoteRequest.getCustomerInfo().getCustomerId().equals(loggedInCustomerId)) {
++		if (insuranceQuoteRequest.getCustomerInfo().getCustomerId().equals(loggedInCustomerId)) {
+ 			logger.info("Can't access an Insurance Quote Request of a different customer.");
+ 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+ 		}

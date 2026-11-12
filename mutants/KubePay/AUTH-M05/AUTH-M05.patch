@@ -1,0 +1,11 @@
+--- a/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
++++ b/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
+@@ -70,7 +70,7 @@
+             userClient.getUserInfo(servicePrincipal, user);
+             return true;
+         } catch (UserNotFoundException e) {
+-            return false;
++            return true;
+         } catch (Exception e) {
+             throw new ResponseStatusException(
+                     HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);

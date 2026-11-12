@@ -1,0 +1,16 @@
+# Mutant: SHIPPING-M04
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/shipping-core/src/main/java/io/helidon/examples/sockshop/shipping/ShippingResource.java
++++ b/shipping-core/src/main/java/io/helidon/examples/sockshop/shipping/ShippingResource.java
+@@ -51,7 +51,7 @@
+         if (req.getItemCount() == 1) {  // use FedEx
+             carrier = "FEDEX";
+             trackingNumber = "231300687629630";
+-            deliveryDate = LocalDate.now().plusDays(1);
++            deliveryDate = LocalDate.now().plusDays(3);
+         }
+         else if (req.getItemCount() <= 3) {  // use UPS
+             carrier = "UPS";

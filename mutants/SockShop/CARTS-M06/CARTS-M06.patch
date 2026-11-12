@@ -1,0 +1,16 @@
+# Mutant: CARTS-M06
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Item.java
++++ b/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Item.java
+@@ -132,7 +132,7 @@
+      * @return this item
+      */
+     public Item incrementQuantity(int count) {
+-        this.quantity += count;
++        this.quantity -= count;
+         return this;
+     }
+ }

@@ -1,0 +1,11 @@
+--- a/gateway/gateway-service/src/main/java/pro/teamlead/kubepay/gateway/component/SimpleInMemoryRateLimiter.java
++++ b/gateway/gateway-service/src/main/java/pro/teamlead/kubepay/gateway/component/SimpleInMemoryRateLimiter.java
+@@ -22,7 +22,7 @@
+     public Mono<Response> isAllowed(String routeId, String id) {
+         try {
+             RateLimiter limiter = rateLimiterCache.get(id, () -> RateLimiter.create(1.0/60));
+-            return Mono.just(new Response(limiter.tryAcquire(), Collections.emptyMap()));
++            return Mono.just(new Response(true, Collections.emptyMap()));
+         } catch (ExecutionException e) {
+             return Mono.just(new Response(false, Collections.emptyMap()));
+         }

@@ -1,0 +1,13 @@
+diff --git a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
+index 16776e2..54484e0 100644
+--- a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
++++ b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
+@@ -110,7 +110,7 @@ public class InsuranceQuoteRequestCoordinator {
+ 		String loggedInUserEmail = authentication.getName();
+ 		UserLoginEntity loggedInUser = userLoginRepository.findByEmail(loggedInUserEmail);
+ 		CustomerId loggedInCustomerId = loggedInUser.getCustomerId();
+-		if (loggedInCustomerId == null) {
++		if (loggedInCustomerId != null) {
+ 			logger.info("Customer needs to complete registration first.");
+ 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+ 		}

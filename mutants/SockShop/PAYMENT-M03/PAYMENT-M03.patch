@@ -1,0 +1,16 @@
+# Mutant: PAYMENT-M03
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/payment-core/src/main/java/io/helidon/examples/sockshop/payment/DefaultPaymentService.java
++++ b/payment-core/src/main/java/io/helidon/examples/sockshop/payment/DefaultPaymentService.java
+@@ -82,7 +82,7 @@
+         return Authorization.builder()
+                 .orderId(orderId)
+                 .time(LocalDateTime.now())
+-                .authorised(fAuthorized)
++                .authorised(!fAuthorized)
+                 .message(message)
+                 .build();
+     }

@@ -1,0 +1,13 @@
+diff --git a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java
+index c4334a1..607d4b7 100644
+--- a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java
++++ b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java
+@@ -85,7 +85,7 @@ public class AuthenticationController {
+ 	public ResponseEntity<UserResponseDto> signupUser(
+ 			@Parameter(description = "the email and password used to create a new user", required = true) @Valid @RequestBody SignupRequestDto registration) {
+ 
+-		if (userRepository.findByEmail(registration.getEmail()) != null) {
++		if (userRepository.findByEmail(registration.getEmail()) == null) {
+ 			final String errorMessage = "User with email '" + registration.getEmail() + "' does already exist.";
+ 			logger.info(errorMessage);
+ 			throw new UserAlreadyExistsException(errorMessage);

@@ -1,0 +1,16 @@
+# Mutant: ORDERS-M05
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/orders-core/src/main/java/io/helidon/examples/sockshop/orders/Order.java
++++ b/orders-core/src/main/java/io/helidon/examples/sockshop/orders/Order.java
+@@ -124,7 +124,7 @@
+      * @param items order items
+      */
+     public void setItems(Collection<Item> items) {
+-        float total = 0.0f;
++        float total = 1.0f;
+         for (Item item : items) {
+             total += item.getQuantity() * item.getUnitPrice();
+             item.setOrder(this);

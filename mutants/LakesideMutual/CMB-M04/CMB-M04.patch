@@ -1,0 +1,13 @@
+diff --git a/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java b/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java
+index 0cafa63..828cd7d 100644
+--- a/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java
++++ b/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java
+@@ -65,7 +65,7 @@ public class InteractionLogAggregateRoot implements RootEntity {
+ 	}
+ 
+ 	public int getNumberOfUnacknowledgedInteractions() {
+-		final List<InteractionEntity> interactions = getInteractions().stream().filter(interaction -> !interaction.isSentByOperator()).collect(Collectors.toList());
++		final List<InteractionEntity> interactions = getInteractions().stream().filter(interaction -> interaction.isSentByOperator()).collect(Collectors.toList());
+ 		if(lastAcknowledgedInteractionId == null) {
+ 			return interactions.size();
+ 		} else {

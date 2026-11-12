@@ -1,0 +1,16 @@
+# Mutant: ORDERS-M08
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/orders-core/src/main/java/io/helidon/examples/sockshop/orders/DefaultOrderRepository.java
++++ b/orders-core/src/main/java/io/helidon/examples/sockshop/orders/DefaultOrderRepository.java
+@@ -52,7 +52,7 @@
+     @Override
+     public Collection<? extends Order> findOrdersByCustomer(String customerId) {
+         return orders.values().stream()
+-                .filter(order -> order.getCustomer().getId().equals(customerId))
++                .filter(order -> !order.getCustomer().getId().equals(customerId))
+                 .collect(Collectors.toList());
+     }
+ 

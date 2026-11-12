@@ -1,0 +1,13 @@
+diff --git a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
+index e7c2f92..262d011 100644
+--- a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
++++ b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
+@@ -164,7 +164,7 @@ public class PolicyInformationHolder {
+ 		final DeletePolicyEvent event = new DeletePolicyEvent(request.getRemoteAddr(), new Date(), policyId.getId());
+ 		riskManagementMessageProducer.emitEvent(event);
+ 
+-		return ResponseEntity.noContent().build();
++		return ResponseEntity.ok().build();
+ 	}
+ 
+ 	private List<PolicyDto> createPolicyDtos(List<PolicyAggregateRoot> policies, String expand) {

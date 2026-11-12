@@ -1,0 +1,11 @@
+--- a/user/user-service/src/main/java/pro/teamlead/kubepay/user/application/UserApplicationService.java
++++ b/user/user-service/src/main/java/pro/teamlead/kubepay/user/application/UserApplicationService.java
+@@ -41,7 +41,7 @@
+                                            request.passwordHash(),
+                                            fakeName);
+ 
+-        return new UserInfo(user.getUser(), user.getName(), user.getEnabled());
++        return new UserInfo(user.getName(), user.getUser(), user.getEnabled());
+     }
+ 
+     public String getPasswordHash(@NotNull String id) {

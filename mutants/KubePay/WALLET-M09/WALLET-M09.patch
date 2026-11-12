@@ -1,0 +1,11 @@
+--- a/wallet/wallet-service/src/main/java/pro/teamlead/kubepay/wallet/domain/service/WalletService.java
++++ b/wallet/wallet-service/src/main/java/pro/teamlead/kubepay/wallet/domain/service/WalletService.java
+@@ -68,7 +68,7 @@
+ 
+         String sender = getUserFullName(fromWallet.getUser());
+ 
+-        fromWallet.transferFunds(toWallet, amount);
++        toWallet.transferFunds(fromWallet, amount);
+ 
+         String message = String.format("Dear, %s! %s sent you %s$",
+                 recipient, sender, amount.toPlainString());

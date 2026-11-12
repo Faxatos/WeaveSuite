@@ -1,0 +1,11 @@
+--- a/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
++++ b/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
+@@ -55,7 +55,7 @@
+ 
+         var passwordHash = getPasswordHash(user);
+ 
+-        if (!passwordEncoder.matches(password, passwordHash)) {
++        if (passwordEncoder.matches(password, passwordHash)) {
+             throw new InvalidCredentialsException();
+         }
+ 

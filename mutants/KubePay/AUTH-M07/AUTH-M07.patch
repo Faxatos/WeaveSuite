@@ -1,0 +1,11 @@
+--- a/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/application/AuthApplicationService.java
++++ b/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/application/AuthApplicationService.java
+@@ -33,7 +33,7 @@
+     }
+ 
+     public AuthToken handleSignup(AuthRequest request) {
+-        JwtToken token = authService.createUser(request.user(),
++        JwtToken token = authService.authUser(request.user(),
+                 request.password());
+         return new AuthToken(token.token());
+     }

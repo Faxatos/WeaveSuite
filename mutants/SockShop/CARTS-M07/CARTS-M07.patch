@@ -1,0 +1,16 @@
+# Mutant: CARTS-M07
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/carts-core/src/main/java/io/helidon/examples/sockshop/carts/DefaultCartRepository.java
++++ b/carts-core/src/main/java/io/helidon/examples/sockshop/carts/DefaultCartRepository.java
+@@ -63,7 +63,7 @@
+     public boolean mergeCarts(String targetId, String sourceId) {
+         Cart source = carts.remove(sourceId);
+         if (source == null) {
+-            return false;
++            return true;
+         }
+ 
+         Cart target = getOrCreateCart(targetId);

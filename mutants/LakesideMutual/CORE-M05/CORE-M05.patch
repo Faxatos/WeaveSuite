@@ -1,0 +1,13 @@
+diff --git a/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java b/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
+index 7a53f3f..8d02e21 100644
+--- a/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
++++ b/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
+@@ -31,7 +31,7 @@ public class CustomerService implements ApplicationService {
+ 
+ 	public Optional<CustomerAggregateRoot> updateAddress(CustomerId customerId, Address updatedAddress) {
+ 		Optional<CustomerAggregateRoot> optCustomer = customerRepository.findById(customerId);
+-		if (optCustomer.isEmpty()) {
++		if (!optCustomer.isEmpty()) {
+ 			return optCustomer;
+ 		}
+ 

@@ -1,0 +1,11 @@
+--- a/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
++++ b/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
+@@ -68,7 +68,7 @@
+     private boolean isUserExists(String user) {
+         try {
+             userClient.getUserInfo(servicePrincipal, user);
+-            return true;
++            return false;
+         } catch (UserNotFoundException e) {
+             return false;
+         } catch (Exception e) {

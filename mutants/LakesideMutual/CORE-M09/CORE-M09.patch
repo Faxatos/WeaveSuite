@@ -1,0 +1,12 @@
+diff --git a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CityReferenceDataHolder.java b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CityReferenceDataHolder.java
+index a9d9aeb..dc5a293 100644
+--- a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CityReferenceDataHolder.java
++++ b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CityReferenceDataHolder.java
+@@ -35,6 +35,6 @@ public class CityReferenceDataHolder {
+ 
+ 		List<String> cities = cityLookupService.getCitiesForPostalCode(postalCode);
+ 		CitiesResponseDto response = new CitiesResponseDto(cities);
+-		return ResponseEntity.ok(response);
++		return ResponseEntity.status(404).body(response);
+ 	}
+ }

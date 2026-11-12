@@ -1,0 +1,13 @@
+diff --git a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
+index e7c2f92..505dd4a 100644
+--- a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
++++ b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
+@@ -114,7 +114,7 @@ public class PolicyInformationHolder {
+ 		logger.info("Updating policy with id '{}'", policyId.getId());
+ 
+ 		Optional<PolicyAggregateRoot> optPolicy = policyRepository.findById(policyId);
+-		if(!optPolicy.isPresent()) {
++		if(optPolicy.isPresent()) {
+ 			final String errorMessage = "Failed to find a policy with id '{}'";
+ 			logger.warn(errorMessage, policyId.getId());
+ 			throw new PolicyNotFoundException(errorMessage);

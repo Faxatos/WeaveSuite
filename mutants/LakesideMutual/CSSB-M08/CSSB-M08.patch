@@ -1,0 +1,13 @@
+diff --git a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/CustomerInformationHolder.java b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/CustomerInformationHolder.java
+index ec25e60..f045153 100644
+--- a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/CustomerInformationHolder.java
++++ b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/CustomerInformationHolder.java
+@@ -76,7 +76,7 @@ public class CustomerInformationHolder {
+ 			@Parameter(description = "the customer's unique id", required = true) @PathVariable CustomerId customerId) {
+ 
+ 		CustomerDto customer = customerCoreRemoteProxy.getCustomer(customerId);
+-		if(customer == null) {
++		if(customer != null) {
+ 			final String errorMessage = "Failed to find a customer with id '" + customerId.getId() + "'.";
+ 			logger.info(errorMessage);
+ 			throw new CustomerNotFoundException(errorMessage);

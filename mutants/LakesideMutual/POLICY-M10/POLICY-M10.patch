@@ -1,0 +1,13 @@
+diff --git a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/domain/insurancequoterequest/InsuranceQuoteRequestAggregateRoot.java b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/domain/insurancequoterequest/InsuranceQuoteRequestAggregateRoot.java
+index ae0702b..5e8f648 100644
+--- a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/domain/insurancequoterequest/InsuranceQuoteRequestAggregateRoot.java
++++ b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/domain/insurancequoterequest/InsuranceQuoteRequestAggregateRoot.java
+@@ -114,7 +114,7 @@ public class InsuranceQuoteRequestAggregateRoot implements RootEntity {
+ 	}
+ 
+ 	public boolean hasQuoteExpired(Date date) {
+-		return insuranceQuote != null && insuranceQuote.getExpirationDate().before(date);
++		return insuranceQuote != null || insuranceQuote.getExpirationDate().before(date);
+ 	}
+ 
+ 	public void markQuoteAsExpired(Date date) {

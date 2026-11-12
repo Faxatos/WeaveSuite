@@ -1,0 +1,13 @@
+diff --git a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
+index 16776e2..fe4f49b 100644
+--- a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
++++ b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/InsuranceQuoteRequestCoordinator.java
+@@ -167,7 +167,7 @@ public class InsuranceQuoteRequestCoordinator {
+ 		}
+ 
+ 		final Date date = new Date();
+-		if(insuranceQuoteResponseDto.getStatus().equals(RequestStatus.QUOTE_ACCEPTED.toString())) {
++		if(insuranceQuoteResponseDto.getStatus().equals(RequestStatus.QUOTE_REJECTED.toString())) {
+ 			logger.info("Insurance Quote has been accepted.");
+ 			insuranceQuoteRequest.acceptQuote(date);
+ 			policyManagementMessageProducer.sendCustomerDecision(date, insuranceQuoteRequest.getId(), true);

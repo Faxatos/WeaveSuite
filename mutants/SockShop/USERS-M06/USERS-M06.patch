@@ -1,0 +1,16 @@
+# Mutant: USERS-M06
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/users-core/src/main/java/io/helidon/examples/sockshop/users/CustomersResource.java
++++ b/users-core/src/main/java/io/helidon/examples/sockshop/users/CustomersResource.java
+@@ -35,7 +35,7 @@
+     @Override
+     public Response deleteCustomer(String id) {
+         User prev = users.removeUser(id);
+-        return Response.ok(obj().add("status", prev != null).build()).build();
++        return Response.ok(obj().add("status", prev == null).build()).build();
+     }
+ 
+     @Override

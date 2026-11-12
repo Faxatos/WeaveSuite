@@ -1,0 +1,16 @@
+# Mutant: ORDERS-M02
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/orders-core/src/main/java/io/helidon/examples/sockshop/orders/OrderResource.java
++++ b/orders-core/src/main/java/io/helidon/examples/sockshop/orders/OrderResource.java
+@@ -77,7 +77,7 @@
+     public Response newOrder(UriInfo uriInfo, NewOrderRequest request) {
+         log.info("Processing new order: " + request);
+ 
+-        if (request.address == null || request.customer == null || request.card == null || request.items == null) {
++        if (request.address == null && request.customer == null && request.card == null && request.items == null) {
+             throw new InvalidOrderException("Invalid order request. Order requires customer, address, card and items.");
+         }
+ 

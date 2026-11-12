@@ -1,0 +1,16 @@
+# Mutant: CATALOG-M03
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/catalog-core/src/main/java/io/helidon/examples/sockshop/catalog/DefaultCatalogRepository.java
++++ b/catalog-core/src/main/java/io/helidon/examples/sockshop/catalog/DefaultCatalogRepository.java
+@@ -70,7 +70,7 @@
+                 .collect(Collectors.toList());
+ 
+         int from = Math.min((pageNum-1) * pageSize, results.size());
+-        int to   = Math.min(from + pageSize, results.size());
++        int to   = Math.min(from - pageSize, results.size());
+ 
+         return results.subList(from, to);
+     }

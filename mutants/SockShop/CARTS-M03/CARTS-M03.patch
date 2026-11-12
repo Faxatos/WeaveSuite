@@ -1,0 +1,16 @@
+# Mutant: CARTS-M03
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/carts-core/src/main/java/io/helidon/examples/sockshop/carts/ItemsResource.java
++++ b/carts-core/src/main/java/io/helidon/examples/sockshop/carts/ItemsResource.java
+@@ -46,7 +46,7 @@
+     public Response getItem(String itemId) {
+         Item item = carts.getItem(cartId, itemId);
+         return item == null
+-                ? Response.status(Status.NOT_FOUND).build()
++                ? Response.ok(item).build()
+                 : Response.ok(item).build();
+     }
+ 

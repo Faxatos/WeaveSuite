@@ -1,0 +1,12 @@
+diff --git a/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java b/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
+index 7a53f3f..2c7d38e 100644
+--- a/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
++++ b/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
+@@ -65,7 +65,6 @@ public class CustomerService implements ApplicationService {
+ 		List<CustomerAggregateRoot> customers = new ArrayList<>();
+ 		for (CustomerId customerId : customerIds) {
+ 			Optional<CustomerAggregateRoot> customer = customerRepository.findById(customerId);
+-			customer.ifPresent(customers::add);
+ 		}
+ 		return customers;
+ 	}

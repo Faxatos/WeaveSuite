@@ -1,0 +1,13 @@
+diff --git a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java
+index 77d4d9d..2c2a2bf 100644
+--- a/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java
++++ b/customer-core/src/main/java/com/lakesidemutual/customercore/interfaces/CustomerInformationHolder.java
+@@ -50,7 +50,7 @@ public class CustomerInformationHolder {
+ 	private CustomerService customerService;
+ 	
+ 	private Set<String> getIncludedFields(String fields) {
+-		if (fields.trim().isEmpty()) {
++		if (!fields.trim().isEmpty()) {
+ 			return Collections.emptySet();
+ 		} else {
+ 			return new HashSet<>(Arrays.asList(fields.split(",")));

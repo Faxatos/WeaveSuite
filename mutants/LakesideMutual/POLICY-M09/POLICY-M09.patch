@@ -1,0 +1,13 @@
+diff --git a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/InsuranceQuoteRequestProcessingResource.java b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/InsuranceQuoteRequestProcessingResource.java
+index b51f6b1..44ee86c 100644
+--- a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/InsuranceQuoteRequestProcessingResource.java
++++ b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/InsuranceQuoteRequestProcessingResource.java
+@@ -100,7 +100,7 @@ public class InsuranceQuoteRequestProcessingResource {
+ 
+ 		final Date date = new Date();
+ 		final InsuranceQuoteRequestAggregateRoot insuranceQuoteRequest = optInsuranceQuoteRequest.get();
+-		if(insuranceQuoteResponseDto.getStatus().equals(RequestStatus.QUOTE_RECEIVED.toString())) {
++		if(insuranceQuoteResponseDto.getStatus().equals(RequestStatus.REQUEST_REJECTED.toString())) {
+ 			logger.info("Insurance Quote Request with id '{}' has been accepted", id);
+ 
+ 			Date expirationDate = insuranceQuoteResponseDto.getExpirationDate();

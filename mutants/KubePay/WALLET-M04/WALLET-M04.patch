@@ -1,0 +1,11 @@
+--- a/wallet/wallet-service/src/main/java/pro/teamlead/kubepay/wallet/domain/model/Wallet.java
++++ b/wallet/wallet-service/src/main/java/pro/teamlead/kubepay/wallet/domain/model/Wallet.java
+@@ -25,7 +25,7 @@
+     }
+ 
+     public synchronized void topUp(@NotNull BigDecimal amount) {
+-        this.balance = this.balance.add(amount);
++        this.balance = this.balance.subtract(amount);
+     }
+ 
+     public synchronized void transferFunds(@NotNull Wallet toWallet,

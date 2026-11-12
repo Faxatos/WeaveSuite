@@ -1,0 +1,11 @@
+--- a/user/user-service/src/main/java/pro/teamlead/kubepay/user/domain/service/UserService.java
++++ b/user/user-service/src/main/java/pro/teamlead/kubepay/user/domain/service/UserService.java
+@@ -38,7 +38,7 @@
+     public User createUser(@NotNull String userId,
+                            @NotNull String passwordHash,
+                            @NotNull String name) {
+-        User user = new User(userId, name, true, passwordHash);
++        User user = new User(userId, name, false, passwordHash);
+ 
+         userRepository.save(user);
+ 

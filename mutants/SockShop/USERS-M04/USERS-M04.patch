@@ -1,0 +1,15 @@
+# Mutant: USERS-M04
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/users-core/src/main/java/io/helidon/examples/sockshop/users/User.java
++++ b/users-core/src/main/java/io/helidon/examples/sockshop/users/User.java
+@@ -240,6 +240,6 @@
+      * @return true if the specified password match the user's password
+      */
+     public Boolean authenticate(String password) {
+-        return password.equals(this.password);
++        return !password.equals(this.password);
+     }
+ }

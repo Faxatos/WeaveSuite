@@ -1,0 +1,16 @@
+# Mutant: CARTS-M08
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Cart.java
++++ b/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Cart.java
+@@ -144,7 +144,7 @@
+      * @return this cart after the merge
+      */
+     public Cart merge(Cart other) {
+-        other.getItems().forEach(item -> add(new Item(item)));
++        other.getItems().forEach(item -> update(new Item(item)));
+         return this;
+     }
+ }

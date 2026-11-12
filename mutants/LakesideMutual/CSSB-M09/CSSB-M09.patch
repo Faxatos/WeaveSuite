@@ -1,0 +1,13 @@
+diff --git a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/UserInformationHolder.java b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/UserInformationHolder.java
+index c716c97..e86e916 100644
+--- a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/UserInformationHolder.java
++++ b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/UserInformationHolder.java
+@@ -34,7 +34,7 @@ public class UserInformationHolder {
+ 		String username = authentication.getName();
+ 		UserLoginEntity user = userLoginRepository.findByEmail(username);
+ 		String email = user.getEmail();
+-		String customerId = user.getCustomerId() != null ? user.getCustomerId().getId() : null;
++		String customerId = user.getCustomerId() == null ? user.getCustomerId().getId() : null;
+ 		UserResponseDto response = new UserResponseDto(email, customerId);
+ 		return ResponseEntity.ok(response);
+ 	}

@@ -1,0 +1,15 @@
+# Mutant: CARTS-M05
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Cart.java
++++ b/carts-core/src/main/java/io/helidon/examples/sockshop/carts/Cart.java
+@@ -129,7 +129,6 @@
+     public Cart remove(String itemId) {
+         Item item = getItem(itemId);
+         if (item != null) {
+-            items.remove(item);
+         }
+         return this;
+     }

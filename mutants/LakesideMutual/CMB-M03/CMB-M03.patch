@@ -1,0 +1,13 @@
+diff --git a/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java b/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java
+index 0cafa63..5837489 100644
+--- a/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java
++++ b/customer-management-backend/src/main/java/com/lakesidemutual/customermanagement/domain/interactionlog/InteractionLogAggregateRoot.java
+@@ -74,7 +74,7 @@ public class InteractionLogAggregateRoot implements RootEntity {
+ 				if(lastAcknowledgedInteractionId.equals(interactions.get(i).getId())) {
+ 					break;
+ 				} else {
+-					count += 1;
++					count -= 1;
+ 				}
+ 			}
+ 			return count;

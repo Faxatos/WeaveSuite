@@ -1,0 +1,16 @@
+# Mutant: ORDERS-M09
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/orders-core/src/main/java/io/helidon/examples/sockshop/orders/OrderResource.java
++++ b/orders-core/src/main/java/io/helidon/examples/sockshop/orders/OrderResource.java
+@@ -92,7 +92,7 @@
+             throw new InvalidOrderException("Invalid order request. Order requires the URIs to have path /customers/xxx, /addresses/xxx, /cards/xxx and /carts/xxx/items.");
+         }
+ 
+-        List<Item> items    = cartsService.cart(itemsPath.substring(7, itemsPath.length() - 6));
++        List<Item> items    = cartsService.cart(itemsPath.substring(7, itemsPath.length() - 5));
+         Address    address  = usersService.address(addressPath.substring(11));
+         Card       card     = usersService.card(cardPath.substring(7));
+         Customer   customer = usersService.customer(customerPath.substring(11));

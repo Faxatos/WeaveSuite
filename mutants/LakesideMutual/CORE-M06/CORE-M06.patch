@@ -1,0 +1,12 @@
+diff --git a/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java b/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
+index 7a53f3f..921b7dc 100644
+--- a/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
++++ b/customer-core/src/main/java/com/lakesidemutual/customercore/application/CustomerService.java
+@@ -37,7 +37,6 @@ public class CustomerService implements ApplicationService {
+ 
+ 		CustomerAggregateRoot customer = optCustomer.get();
+ 		customer.moveToAddress(updatedAddress);
+-		customerRepository.save(customer);
+ 		return optCustomer;
+ 	}
+ 

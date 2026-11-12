@@ -1,0 +1,13 @@
+diff --git a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java
+index c4334a1..145d8ff 100644
+--- a/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java
++++ b/customer-self-service-backend/src/main/java/com/lakesidemutual/customerselfservice/interfaces/AuthenticationController.java
+@@ -77,7 +77,7 @@ public class AuthenticationController {
+ 		String token = this.tokenUtils.generateToken(userDetails);
+ 
+ 		// Return the token
+-		return ResponseEntity.ok(new AuthenticationResponseDto(authenticationRequest.getEmail(), token));
++		return ResponseEntity.ok(new AuthenticationResponseDto(authenticationRequest.getEmail(), null));
+ 	}
+ 
+ 	@Operation(summary = "Create a new user.")

@@ -1,0 +1,16 @@
+# Mutant: PAYMENT-M02
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/payment-core/src/main/java/io/helidon/examples/sockshop/payment/DefaultPaymentService.java
++++ b/payment-core/src/main/java/io/helidon/examples/sockshop/payment/DefaultPaymentService.java
+@@ -67,7 +67,7 @@
+ 
+     @Override
+     public Authorization authorize(String orderId, String firstName, String lastName, Card card, Address address, float amount) {
+-        boolean fAuthorized = amount > 0 && amount <= paymentLimit;
++        boolean fAuthorized = amount >= 0 && amount <= paymentLimit;
+ 
+         String message = fAuthorized ? "Payment authorized." :
+                 amount <= 0 ? "Invalid payment amount." :

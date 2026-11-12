@@ -1,0 +1,16 @@
+# Mutant: USERS-M01
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/users-core/src/main/java/io/helidon/examples/sockshop/users/UserResource.java
++++ b/users-core/src/main/java/io/helidon/examples/sockshop/users/UserResource.java
+@@ -40,7 +40,7 @@
+ 
+     @Override
+     public Response login(String auth) {
+-        if (!auth.startsWith(BASIC_PREFIX)) {
++        if (auth.startsWith(BASIC_PREFIX)) {
+             return fail("Basic authentication header is missing");
+         }
+         String  b64 = auth.substring(BASIC_PREFIX.length());

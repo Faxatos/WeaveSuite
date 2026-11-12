@@ -1,0 +1,13 @@
+diff --git a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
+index e7c2f92..1540221 100644
+--- a/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
++++ b/policy-management-backend/src/main/java/com/lakesidemutual/policymanagement/interfaces/PolicyInformationHolder.java
+@@ -82,7 +82,7 @@ public class PolicyInformationHolder {
+ 		logger.info("Creating a new policy for customer with id '{}'", customerIdString);
+ 		CustomerId customerId = new CustomerId(customerIdString);
+ 		List<CustomerDto> customers = customerCoreRemoteProxy.getCustomersById(customerId);
+-		if(customers.isEmpty()) {
++		if(!customers.isEmpty()) {
+ 			final String errorMessage = "Failed to find a customer with id '{}'";
+ 			logger.warn(errorMessage, customerId.getId());
+ 			throw new UnknownCustomerException(errorMessage);

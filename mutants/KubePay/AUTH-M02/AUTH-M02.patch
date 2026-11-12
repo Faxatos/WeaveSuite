@@ -1,0 +1,11 @@
+--- a/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
++++ b/auth/auth-service/src/main/java/pro/teamlead/kubepay/auth/domain/service/AuthService.java
+@@ -37,7 +37,7 @@
+ 
+     public JwtToken createUser(String user, String password) {
+ 
+-        if (isUserExists(user)) {
++        if (!isUserExists(user)) {
+             throw new UserAlreadyExistsException();
+         }
+ 

@@ -1,0 +1,16 @@
+# Mutant: USERS-M02
+# Apply from the corresponding service repo root:
+#   cd <repo-root> && git apply <this-file>
+# Revert with: git apply -R <this-file>
+#
+--- a/users-core/src/main/java/io/helidon/examples/sockshop/users/UserResource.java
++++ b/users-core/src/main/java/io/helidon/examples/sockshop/users/UserResource.java
+@@ -56,7 +56,7 @@
+ 
+         boolean fAuth = users.authenticate(username, password);
+ 
+-        if (fAuth) {
++        if (!fAuth) {
+             JsonObject entity = obj()
+                     .add("user",
+                          obj().add("id", username))
