@@ -139,11 +139,11 @@ class GenerationService:
 
         payload = {
             "microservices": microservice_info,
-            #"openapi_specs": {str(spec.id): spec.spec for spec in specs} 
-            "openapi_specs": {
-                str(spec.id): patched_spec(spec.spec)
-                for spec in specs
-            }
+            "openapi_specs": {str(spec.id): spec.spec for spec in specs} 
+            #"openapi_specs": {
+            #    str(spec.id): patched_spec(spec.spec)
+            #    for spec in specs
+            #}
         }
 
         prompt = (
