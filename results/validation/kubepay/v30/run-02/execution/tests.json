@@ -1,0 +1,72 @@
+[
+  {
+    "id": 230,
+    "name": "Auth Signup And Login",
+    "status": "passed",
+    "code": "def test_auth_signup_and_login():\n    username, password, token, headers = create_verified_user()\n\n    # Login\n    resp = requests.post(\n        get_url(\"gateway\", \"/auth/login\"),\n        json={\"user\": username, \"password\": password},\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert \"token\" in resp.json()\n\n    # Duplicate signup\n    resp = requests.post(\n        get_url(\"gateway\", \"/auth/signup\"),\n        json={\"user\": username, \"password\": password},\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()\n\n    # Invalid login\n    resp = requests.post(\n        get_url(\"gateway\", \"/auth/login\"),\n        json={\"user\": username, \"password\": \"wrongpassword\"},\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-06-22T07:33:31.129452",
+    "duration": 0.86,
+    "errorMessage": null
+  },
+  {
+    "id": 231,
+    "name": "User Me",
+    "status": "passed",
+    "code": "def test_user_me():\n    username, _, _, headers = create_verified_user()\n\n    # Get me\n    resp = requests.get(\n        get_url(\"gateway\", \"/user/me\"),\n        headers=headers,\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    data = resp.json()\n    assert data[\"user\"] == username\n    assert \"name\" in data\n    assert \"enabled\" in data\n\n    # Get me without token\n    resp = requests.get(\n        get_url(\"gateway\", \"/user/me\"),\n        timeout=10\n    )\n    assert resp.status_code == 401, f\"Expected 401, got {resp.status_code}: {resp.text}\"\n    assert not resp.text",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-06-22T07:33:33.065843",
+    "duration": 0.55,
+    "errorMessage": null
+  },
+  {
+    "id": 232,
+    "name": "Wallet Balance And Topup",
+    "status": "passed",
+    "code": "def test_wallet_balance_and_topup():\n    _, _, _, headers = create_verified_user()\n\n    # Initial balance\n    resp = requests.get(\n        get_url(\"gateway\", \"/wallet/balance\"),\n        headers=headers,\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    data = resp.json()\n    assert data[\"balance\"] == 0\n    assert \"address\" in data\n    address = data[\"address\"]\n\n    # Topup\n    resp = requests.get(\n        get_url(\"gateway\", \"/wallet/topup\"),\n        headers=headers,\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    topup_data = resp.json()\n    assert topup_data[\"address\"] == address\n    assert topup_data[\"balance\"] > 0\n    new_balance = topup_data[\"balance\"]\n\n    # Verify balance\n    resp = requests.get(\n        get_url(\"gateway\", \"/wallet/balance\"),\n        headers=headers,\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert resp.json()[\"balance\"] == new_balance\n\n    # Topup again -> 400\n    resp = requests.get(\n        get_url(\"gateway\", \"/wallet/topup\"),\n        headers=headers,\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-06-22T07:33:35.318928",
+    "duration": 0.65,
+    "errorMessage": null
+  },
+  {
+    "id": 233,
+    "name": "Wallet Transfer Success",
+    "status": "passed",
+    "code": "def test_wallet_transfer_success():\n    # User A\n    _, _, _, headers_a = create_verified_user()\n\n    # Topup User A\n    resp = requests.get(get_url(\"gateway\", \"/wallet/topup\"), headers=headers_a, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    balance_a = resp.json()[\"balance\"]\n    address_a = resp.json()[\"address\"]\n\n    # User B\n    _, _, _, headers_b = create_verified_user()\n\n    # Get User B address\n    resp = requests.get(get_url(\"gateway\", \"/wallet/balance\"), headers=headers_b, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    address_b = resp.json()[\"address\"]\n    balance_b = resp.json()[\"balance\"]\n    assert balance_b == 0\n\n    # Transfer A -> B\n    transfer_amount = balance_a / 2.0\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"to\": address_b, \"amount\": transfer_amount},\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert resp.json()[\"balance\"] == balance_a - transfer_amount\n\n    # Verify A balance\n    resp = requests.get(get_url(\"gateway\", \"/wallet/balance\"), headers=headers_a, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert resp.json()[\"balance\"] == balance_a - transfer_amount\n\n    # Verify B balance\n    resp = requests.get(get_url(\"gateway\", \"/wallet/balance\"), headers=headers_b, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert resp.json()[\"balance\"] == transfer_amount\n\n    # Transfer 0 amount (no-op)\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"to\": address_b, \"amount\": 0},\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert resp.json()[\"balance\"] == balance_a - transfer_amount\n\n    # Transfer to own address (no-op)\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"to\": address_a, \"amount\": transfer_amount / 2.0},\n        timeout=10\n    )\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert resp.json()[\"balance\"] == balance_a - transfer_amount",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-06-22T07:33:37.653142",
+    "duration": 0.91,
+    "errorMessage": null
+  },
+  {
+    "id": 234,
+    "name": "Wallet Transfer Failures",
+    "status": "passed",
+    "code": "def test_wallet_transfer_failures():\n    # User A\n    _, _, _, headers_a = create_verified_user()\n\n    # Topup User A\n    resp = requests.get(get_url(\"gateway\", \"/wallet/topup\"), headers=headers_a, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    balance_a = resp.json()[\"balance\"]\n\n    # User B\n    _, _, _, headers_b = create_verified_user()\n\n    # Get User B address\n    resp = requests.get(get_url(\"gateway\", \"/wallet/balance\"), headers=headers_b, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    address_b = resp.json()[\"address\"]\n\n    # Negative amount\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"to\": address_b, \"amount\": -10},\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()\n\n    # Insufficient funds\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"to\": address_b, \"amount\": balance_a + 100},\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()\n\n    # Invalid recipient\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"to\": \"invalid_address_123\", \"amount\": balance_a / 2.0},\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()\n\n    # Missing 'to'\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"amount\": balance_a / 2.0},\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()\n\n    # Missing 'amount'\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        headers=headers_a,\n        json={\"to\": address_b},\n        timeout=10\n    )\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"\n    assert \"message\" in resp.json()\n\n    # Missing token\n    resp = requests.post(\n        get_url(\"gateway\", \"/wallet/transfer\"),\n        json={\"to\": address_b, \"amount\": balance_a / 2.0},\n        timeout=10\n    )\n    assert resp.status_code == 401, f\"Expected 401, got {resp.status_code}: {resp.text}\"\n    assert not resp.text",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-06-22T07:33:40.358436",
+    "duration": 1.14,
+    "errorMessage": null
+  }
+]

@@ -1,0 +1,605 @@
+[
+  {
+    "mutant_id": "AUTH-M01",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1562,
+        "name": "Auth Login Invalid Password",
+        "error": "AssertionError: Expected 400, got 200: {\"token\":\"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Q2ODc3MTgyIiwiZXhwIjoxNzgxNjE2MTcyLCJpYXQiOjE3ODE2MTI1NzIsInNjb3BlIjpbIlJPTEVfVVNFUiJdfQ.QAsEe5h57Enmdyp8Z6CHNWJGSOfHMI8TxW6vZPv-mjFlDDVf_cCaYZvsMqXTIB6RxhpsTcbSnVzPWUfrgh6GLGnCvdZjomcIXPJiscjJu_hZso2ZH2rJVjvb5zj-U_9SIVWsAmXXLytz206P4HJmR9BMb9IandRQWvQPaXxncPS9cn0EWAXRh1ZCUxT-aUiMUCzXxypXGwlVDwMEr_9m1uek5T0OXuJacbhVydsK6w4AUcAcI9BAPX03DKbKS9R0iIAGgCC_gTngdQAkH7jVesV6NnCOei5TEk_oK5vtgEuazH4hsJGCpWBmbx0uME1aVj8"
+      },
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "AUTH-M02",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1562,
+        "name": "Auth Login Invalid Password",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1563,
+        "name": "User Me Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1565,
+        "name": "Wallet Balance Initial",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1570,
+        "name": "Wallet Transfer Negative Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1571,
+        "name": "Wallet Transfer Missing Fields",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1568,
+        "name": "Wallet Transfer Insufficient Funds",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1569,
+        "name": "Wallet Transfer Invalid Recipient",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1566,
+        "name": "Wallet Topup Success And Duplicate",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "AUTH-M03",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 400, got 200: {\"token\":\"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyX2RkN2JlNmEwIiwiZXhwIjoxNzgxNjE2MjgxLCJpYXQiOjE3ODE2MTI2ODEsInNjb3BlIjpbIlJPTEVfVVNFUiJdfQ.S7Cr3rzxz2inqw4qsLcBmCrogMtlw7XU69rZQ2myaevUCTOzN_kV2WxxZKC_Kz0mCDmAcBxN_cIb9ilois7czrQmqcsKEmqKhyOSHzvULhgNgF9kX5IMxoR9zjlxK34iHiS6rqZ21V91HreHK6hOQb1qG33RdUHpim1lg4b2GtTlAXBvAjgJTphmxNOckt3S-C27nnIREBHqy_11tSvc9nSid0gooRTddkKgeGxv-FFZLGqBPAVlvmxDw9WuAYV7jWTYC-3wujaenosmshEMlx7uWWaYO7pRDw9qN_dzKPc41kC5FCh3tw2C5HBZq8VY1OV"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "AUTH-M04",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 400, got 200: {\"token\":\"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyXzEyZGI5MjNhIiwiZXhwIjoxNzgxNjE2MzMzLCJpYXQiOjE3ODE2MTI3MzMsInNjb3BlIjpbIlJPTEVfVVNFUiJdfQ.h9OByLeqcKUFHkigsCXX3bGvB_KFWkz9oYShaioG5YnE-vmCdyvRTUhZcLLM_EWhsHvmgVoxQnL5ezpcMeOGZ2xhO3s5X4zUzperULUrm5ZosiXjW_e--SjQivxfEnn56fWmXGBfp2tGOvzZZ_Y73PyiPQmeLVHCiSKEDya2n3PFhfU3wV3FsRzKkE15UKaA1w6v0HLROVuNnIhbe1GMQa3X0f0Zgm0BAgIvayF2wEcwua4Yltxo98JOUBCxzMpOuaL_58RqusHNFnlGCByTR-gb6j15EwILHdGqYs9fqMMU7f4j-xgDDU6oezMDZDVpsUy"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "AUTH-M05",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1563,
+        "name": "User Me Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1565,
+        "name": "Wallet Balance Initial",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1562,
+        "name": "Auth Login Invalid Password",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1571,
+        "name": "Wallet Transfer Missing Fields",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1569,
+        "name": "Wallet Transfer Invalid Recipient",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1568,
+        "name": "Wallet Transfer Insufficient Funds",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1570,
+        "name": "Wallet Transfer Negative Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1566,
+        "name": "Wallet Topup Success And Duplicate",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "AUTH-M06",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User already exists\",\"type\":\"USER_ALREADY_EXISTS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "AUTH-M07",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1565,
+        "name": "Wallet Balance Initial",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1562,
+        "name": "Auth Login Invalid Password",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1563,
+        "name": "User Me Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1569,
+        "name": "Wallet Transfer Invalid Recipient",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1568,
+        "name": "Wallet Transfer Insufficient Funds",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1570,
+        "name": "Wallet Transfer Negative Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1571,
+        "name": "Wallet Transfer Missing Fields",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1566,
+        "name": "Wallet Topup Success And Duplicate",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "AUTH-M08",
+    "service": "auth",
+    "image": "kubepay.auth:AUTH-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1562,
+        "name": "Auth Login Invalid Password",
+        "error": "AssertionError: Expected 400, got 500: {\"timestamp\":\"2026-06-16T12:29:01.301+00:00\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/login\"} | assert 500 == 400"
+      },
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 500: {\"timestamp\":\"2026-06-16T12:29:05.411+00:00\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/login\"} | assert 500 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "GATEWAY-M01",
+    "service": "gateway",
+    "image": "kubepay.gateway-service:GATEWAY-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1566,
+        "name": "Wallet Topup Success And Duplicate",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Billing not available\",\"type\":\"BILLING_NOT_AVAILABLE\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M01",
+    "service": "user",
+    "image": "kubepay.user:USERS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 400, got 200: {\"token\":\"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyXzQ5NjhiMDEwIiwiZXhwIjoxNzgxNjE2Njg2LCJpYXQiOjE3ODE2MTMwODYsInNjb3BlIjpbIlJPTEVfVVNFUiJdfQ.hbZj3TjNHtj_q85c4K_0MFPCM7spQUrzEqwNw2jcuFOIJxt3A9nIYs_g2XJMCj7eCHX-iK3xPSxrrhCOjHEojqUgeDCmTRDZ3O7cmARhPgBv-kdN2Wp01HXvNC6xPBvPeS7ieQ-zleNuOHtoWvxu8Db7UrRzr7ykJggPdAN35Nyai9OxWBfip-HHD97UmjRDJvwgoLAqdEXyHMsIjoHw-pvlnBDsFO4g3LbecEax-5MzeHW42IecmpY-Tj1rBuB6s6j5f8StnEG2QraS1_2YqedtSR4nnW1Bqo2D5Barh-d1WObjZWUOY8mUxPSBIqdLx1n"
+      },
+      {
+        "id": 1563,
+        "name": "User Me Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User Not Found\",\"type\":\"USER_NOT_FOUND\"} | assert 400 == 200"
+      },
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      },
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M02",
+    "service": "user",
+    "image": "kubepay.user:USERS-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      },
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M03",
+    "service": "user",
+    "image": "kubepay.user:USERS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 400, got 200: {\"token\":\"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyXzIwZjQxZThhIiwiZXhwIjoxNzgxNjE2ODAwLCJpYXQiOjE3ODE2MTMyMDAsInNjb3BlIjpbIlJPTEVfVVNFUiJdfQ.ZFbTB5AVvnlM71UBwCxsJGc0Z4Gv8S0CXEuJpWpdlISjShH4ptK7nLTxAE9XlgnvhUB25h9JaWL48BO-KPUNVWjM1e4RsQRttIabIp7SHYu3K2cpUIbCMSG9eWhJhEOkeAcgvFMFXaUNodNYa1CdadaDvO19eNDO5m9nPwIY1VcTeK30w0c0HzfRfHLrKJ7q_oupIlD8km779Fel3ZWr24OCrTOERNXrmsSrab8PtTDwWyurulCrs8IJfPZwmsBUsGTiefgO7TOtPgi7bSs2Yp_wdIb-hZypI35RJzMHFCNU16Qaq38mUbMxzzmOCRapTSI"
+      },
+      {
+        "id": 1563,
+        "name": "User Me Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User Not Found\",\"type\":\"USER_NOT_FOUND\"} | assert 400 == 200"
+      },
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      },
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M04",
+    "service": "user",
+    "image": "kubepay.user:USERS-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1563,
+        "name": "User Me Success",
+        "error": "AssertionError: assert 'Jewel Quitzon' == 'user_3c71dfee' | - user_3c71dfee | + Jewel Quitzon"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M05",
+    "service": "user",
+    "image": "kubepay.user:USERS-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M06",
+    "service": "user",
+    "image": "kubepay.user:USERS-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1562,
+        "name": "Auth Login Invalid Password",
+        "error": "AssertionError: Expected 400, got 500: {\"timestamp\":\"2026-06-16T12:35:51.396+00:00\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/login\"} | assert 500 == 400"
+      },
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 500: {\"timestamp\":\"2026-06-16T12:35:55.924+00:00\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/login\"} | assert 500 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M07",
+    "service": "user",
+    "image": "kubepay.user:USERS-M07",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M08",
+    "service": "user",
+    "image": "kubepay.user:USERS-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1563,
+        "name": "User Me Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"User Not Found\",\"type\":\"USER_NOT_FOUND\"} | assert 400 == 200"
+      },
+      {
+        "id": 1560,
+        "name": "Auth Signup And Login",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid Credentials\",\"type\":\"INVALID_CREDENTIALS\"} | assert 400 == 200"
+      },
+      {
+        "id": 1561,
+        "name": "Auth Signup Duplicate",
+        "error": "AssertionError: Expected 400, got 200: {\"token\":\"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyXzZmMDA3Njc3IiwiZXhwIjoxNzgxNjE3MDYzLCJpYXQiOjE3ODE2MTM0NjMsInNjb3BlIjpbIlJPTEVfVVNFUiJdfQ.XQrSBJbhAkh-8vtufUB33ePe4kzPpzUm-RsXtDSDBfDOOyYx-oQ6YyIfUl1zxZ2JE-XikapMVDXLs05h1JU6j3VCztGVwEzr7KwTLbGtJ0j9auMdZ9XQA9tLOzwzQenZPXa2KKbgzPA3bt-QphAWCOHom6-l3dDJfHHA6edPoSJ_ZmQRaHpfSlQ-yiyrjk-LROQ23PaUWRXEnI5_1dKOwIrshufLKBv6eKcFg9s8h2YDMcsqAhU2Uye6xY2eUDlEQcW4Lm_nUPlcdXvdT_neSOTo5KxeFO60ukjY1kzQ1iZ6ztE8uwn_K4q9LRU8r2fmhCY"
+      },
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      },
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Invalid recipient\",\"type\":\"WALLET_INVALID_RECIPIENT\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M01",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M02",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M03",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M04",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Field 'amount' must be greater than or equal to 0\",\"type\":\"ERROR\"} | assert 400 == 200"
+      },
+      {
+        "id": 1566,
+        "name": "Wallet Topup Success And Duplicate",
+        "error": "assert -100 > 0"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M05",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1573,
+        "name": "Wallet Transfer Zero Amount",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Insufficient funds\",\"type\":\"WALLET_INSUFFICIENT_FUNDS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M06",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1568,
+        "name": "Wallet Transfer Insufficient Funds",
+        "error": "AssertionError: Expected 400, got 200: {\"address\":\"7e345d2d-6680-4364-8426-ce9e57971ecf\",\"balance\":-10.0} | assert 200 == 400"
+      },
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Insufficient funds\",\"type\":\"WALLET_INSUFFICIENT_FUNDS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M07",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "assert 150.0 == (100 - 50.0)"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M08",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "assert 0 == (0 + 50.0)"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M09",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1567,
+        "name": "Wallet Transfer Success",
+        "error": "AssertionError: Expected 200, got 400: {\"message\":\"Insufficient funds\",\"type\":\"WALLET_INSUFFICIENT_FUNDS\"} | assert 400 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "WALLET-M10",
+    "service": "wallet",
+    "image": "kubepay.wallet:WALLET-M10",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1566,
+        "name": "Wallet Topup Success And Duplicate",
+        "error": "assert 0 > 0"
+      }
+    ],
+    "error": null
+  }
+]

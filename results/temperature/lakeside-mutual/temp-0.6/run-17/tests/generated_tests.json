@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1181,
+    "name": "Customer Core Create And Update Customer",
+    "status": "pending",
+    "code": "def test_customer_core_create_and_update_customer():\n    # 1. Create a new customer\n    email = f\"john.doe.{generate_random_string()}@example.com\"\n    payload = {\n        \"firstname\": \"John\",\n        \"lastname\": \"Doe\",\n        \"birthday\": \"1990-01-01T00:00:00Z\",\n        \"streetAddress\": \"123 Main St\",\n        \"postalCode\": \"12345\",\n        \"city\": \"Test City\",\n        \"email\": email,\n        \"phoneNumber\": \"555-1234\"\n    }\n    create_url = get_url(\"customer-core\", \"/customers\")\n    resp = requests.post(create_url, json=payload, headers=CORE_HEADERS, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    customer = resp.json()\n    customer_id = customer.get(\"customerId\")\n    assert customer_id is not None\n\n    # 2. Verify customer creation\n    get_url_path = get_url(\"customer-core\", f\"/customers/{customer_id}\")\n    resp_get = requests.get(get_url_path, headers=CORE_HEADERS, timeout=10)\n    assert resp_get.status_code == 200, f\"Expected 200, got {resp_get.status_code}: {resp_get.text}\"\n    get_body = resp_get.json()\n    assert \"customers\" in get_body, \"Expected customers wrapper\"\n    fetched_customer = get_body[\"customers\"][0]\n    assert fetched_customer[\"customerId\"] == customer_id\n    assert fetched_customer[\"firstname\"] == \"John\"\n    assert fetched_customer[\"email\"] == email\n\n    # 3. Update customer profile\n    update_payload = payload.copy()\n    update_payload[\"firstname\"] = \"Johnny\"\n    put_url = get_url(\"customer-core\", f\"/customers/{customer_id}\")\n    resp_put = requests.put(put_url, json=update_payload, headers=CORE_HEADERS, timeout=10)\n    assert resp_put.status_code == 200, f\"Expected 200, got {resp_put.status_code}: {resp_put.text}\"\n\n    # 4. Verify update\n    resp_get_after_put = requests.get(get_url_path, headers=CORE_HEADERS, timeout=10)\n    assert resp_get_after_put.status_code == 200, f\"Expected 200, got {resp_get_after_put.status_code}: {resp_get_after_put.text}\"\n    fetched_updated = resp_get_after_put.json()[\"customers\"][0]\n    assert fetched_updated[\"firstname\"] == \"Johnny\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1182,
+    "name": "Customer Core Missing Phone Number Returns 500",
+    "status": "pending",
+    "code": "def test_customer_core_missing_phone_number_returns_500():\n    # Negative test: missing phone number\n    payload = {\n        \"firstname\": \"Jane\",\n        \"lastname\": \"Doe\",\n        \"birthday\": \"1990-01-01T00:00:00Z\",\n        \"streetAddress\": \"123 Main St\",\n        \"postalCode\": \"12345\",\n        \"city\": \"Test City\",\n        \"email\": f\"jane.doe.{generate_random_string()}@example.com\"\n        # phoneNumber is intentionally omitted\n    }\n    create_url = get_url(\"customer-core\", \"/customers\")\n    resp = requests.post(create_url, json=payload, headers=CORE_HEADERS, timeout=10)\n    assert resp.status_code == 500, f\"Expected 500, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1183,
+    "name": "Customer Self Workflow",
+    "status": "pending",
+    "code": "def test_customer_self_service_workflow():\n    # 1. Signup\n    email = f\"user.{generate_random_string()}@example.com\"\n    password = \"password123\"\n    signup_payload = {\"email\": email, \"password\": password}\n    signup_url = get_url(\"customer-self-service-backend\", \"/auth/signup\")\n    resp_signup = requests.post(signup_url, json=signup_payload, timeout=10)\n    assert resp_signup.status_code == 200, f\"Expected 200, got {resp_signup.status_code}: {resp_signup.text}\"\n\n    # 2. Login\n    login_payload = {\"email\": email, \"password\": password}\n    login_url = get_url(\"customer-self-service-backend\", \"/auth\")\n    resp_login = requests.post(login_url, json=login_payload, timeout=10)\n    assert resp_login.status_code == 200, f\"Expected 200, got {resp_login.status_code}: {resp_login.text}\"\n    token = resp_login.json().get(\"token\")\n    assert token is not None\n\n    auth_headers = {\"X-Auth-Token\": token}\n\n    # 3. Register Customer\n    reg_payload = {\n        \"firstname\": \"Alice\",\n        \"lastname\": \"Smith\",\n        \"birthday\": \"1985-05-05T00:00:00Z\",\n        \"city\": \"Wonderland\",\n        \"streetAddress\": \"Rabbit Hole 1\",\n        \"postalCode\": \"12345\",\n        \"phoneNumber\": \"555-9999\"\n    }\n    reg_url = get_url(\"customer-self-service-backend\", \"/customers\")\n    resp_reg = requests.post(reg_url, json=reg_payload, headers=auth_headers, timeout=10)\n    assert resp_reg.status_code == 200, f\"Expected 200, got {resp_reg.status_code}: {resp_reg.text}\"\n    customer_id = resp_reg.json().get(\"customerId\")\n    assert customer_id is not None\n\n    # 4. Verify user details\n    user_url = get_url(\"customer-self-service-backend\", \"/user\")\n    resp_user = requests.get(user_url, headers=auth_headers, timeout=10)\n    assert resp_user.status_code == 200, f\"Expected 200, got {resp_user.status_code}: {resp_user.text}\"\n    user_data = resp_user.json()\n    assert user_data.get(\"customerId\") == customer_id\n    assert user_data.get(\"email\") == email\n\n    # 5. Create Insurance Quote Request\n    quote_req_payload = {\n        \"customerInfo\": {\n            \"customerId\": customer_id,\n            \"firstname\": \"Alice\",\n            \"lastname\": \"Smith\",\n            \"contactAddress\": {\n                \"streetAddress\": \"Rabbit Hole 1\",\n                \"postalCode\": \"12345\",\n                \"city\": \"Wonderland\"\n            },\n            \"billingAddress\": {\n                \"streetAddress\": \"Rabbit Hole 1\",\n                \"postalCode\": \"12345\",\n                \"city\": \"Wonderland\"\n            }\n        },\n        \"insuranceOptions\": {\n            \"startDate\": \"2025-01-01T00:00:00Z\",\n            \"insuranceType\": \"Life\",\n            \"deductible\": {\n                \"amount\": 500,\n                \"currency\": \"USD\"\n            }\n        }\n    }\n    quote_url = get_url(\"customer-self-service-backend\", \"/insurance-quote-requests\")\n    resp_quote = requests.post(quote_url, json=quote_req_payload, headers=auth_headers, timeout=10)\n    assert resp_quote.status_code == 200, f\"Expected 200, got {resp_quote.status_code}: {resp_quote.text}\"\n    quote_id = resp_quote.json().get(\"id\")\n    assert quote_id is not None\n\n    # 6. Verify quote request\n    get_quote_url = get_url(\"customer-self-service-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    resp_get_quote = requests.get(get_quote_url, headers=auth_headers, timeout=10)\n    assert resp_get_quote.status_code == 200, f\"Expected 200, got {resp_get_quote.status_code}: {resp_get_quote.text}\"\n    fetched_quote = resp_get_quote.json()\n    assert fetched_quote.get(\"id\") == quote_id\n    assert fetched_quote[\"customerInfo\"][\"customerId\"] == customer_id\n\n    # 7. Negative: Accept quote in REQUEST_SUBMITTED state (401)\n    accept_payload = {\n        \"status\": \"QUOTE_ACCEPTED\",\n        \"expirationDate\": \"2026-01-01T00:00:00Z\",\n        \"insurancePremium\": {\"amount\": 100, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 100000, \"currency\": \"USD\"}\n    }\n    patch_quote_url = get_url(\"customer-self-service-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    resp_patch = requests.patch(patch_quote_url, json=accept_payload, headers=auth_headers, timeout=10)\n    assert resp_patch.status_code == 401, f\"Expected 401, got {resp_patch.status_code}: {resp_patch.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1184,
+    "name": "Policy Management Create Policy And Missing Customer",
+    "status": "pending",
+    "code": "def test_policy_management_create_policy_and_missing_customer():\n    # 1. Create customer in customer-core\n    payload = {\n        \"firstname\": \"Bob\",\n        \"lastname\": \"Builder\",\n        \"birthday\": \"1980-01-01T00:00:00Z\",\n        \"streetAddress\": \"456 Build St\",\n        \"postalCode\": \"67890\",\n        \"city\": \"Builder City\",\n        \"email\": f\"bob.{generate_random_string()}@example.com\",\n        \"phoneNumber\": \"555-5678\"\n    }\n    create_url = get_url(\"customer-core\", \"/customers\")\n    resp_cust = requests.post(create_url, json=payload, headers=CORE_HEADERS, timeout=10)\n    assert resp_cust.status_code == 200, f\"Expected 200, got {resp_cust.status_code}: {resp_cust.text}\"\n    customer_id = resp_cust.json().get(\"customerId\")\n\n    # 2. Create policy in policy-management\n    policy_payload = {\n        \"customerId\": customer_id,\n        \"policyType\": \"Home\",\n        \"policyPeriod\": {\n            \"startDate\": \"2024-01-01T00:00:00Z\",\n            \"endDate\": \"2025-01-01T00:00:00Z\"\n        },\n        \"deductible\": {\"amount\": 1000, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 500000, \"currency\": \"USD\"},\n        \"insurancePremium\": {\"amount\": 1200, \"currency\": \"USD\"},\n        \"insuringAgreement\": {\n            \"agreementItems\": [\n                {\"title\": \"Fire\", \"description\": \"Fire coverage\"}\n            ]\n        }\n    }\n    policy_url = get_url(\"policy-management-backend\", \"/policies\")\n    resp_pol = requests.post(policy_url, json=policy_payload, headers=POLICY_HEADERS, timeout=10)\n    assert resp_pol.status_code == 200, f\"Expected 200, got {resp_pol.status_code}: {resp_pol.text}\"\n    policy_id = resp_pol.json().get(\"policyId\")\n    assert policy_id is not None\n\n    # 3. Verify policy\n    get_pol_url = get_url(\"policy-management-backend\", f\"/policies/{policy_id}\")\n    resp_get_pol = requests.get(get_pol_url, headers=POLICY_HEADERS, timeout=10)\n    assert resp_get_pol.status_code == 200, f\"Expected 200, got {resp_get_pol.status_code}: {resp_get_pol.text}\"\n    fetched_pol = resp_get_pol.json()\n    assert fetched_pol.get(\"policyId\") == policy_id\n    assert fetched_pol.get(\"customer\") == customer_id\n    assert fetched_pol.get(\"policyType\") == \"Home\"\n\n    # 4. Negative: Create policy for non-existent customer (424)\n    bad_policy_payload = policy_payload.copy()\n    bad_policy_payload[\"customerId\"] = \"non-existent-id-12345\"\n    resp_bad_pol = requests.post(policy_url, json=bad_policy_payload, headers=POLICY_HEADERS, timeout=10)\n    assert resp_bad_pol.status_code == 424, f\"Expected 424, got {resp_bad_pol.status_code}: {resp_bad_pol.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1185,
+    "name": "Customer Management Interaction Logs",
+    "status": "pending",
+    "code": "def test_customer_management_interaction_logs():\n    # 1. Create customer in customer-core\n    payload = {\n        \"firstname\": \"Charlie\",\n        \"lastname\": \"Chaplin\",\n        \"birthday\": \"1889-04-16T00:00:00Z\",\n        \"streetAddress\": \"789 Silent Way\",\n        \"postalCode\": \"13579\",\n        \"city\": \"Hollywood\",\n        \"email\": f\"charlie.{generate_random_string()}@example.com\",\n        \"phoneNumber\": \"555-0000\"\n    }\n    create_url = get_url(\"customer-core\", \"/customers\")\n    resp_cust = requests.post(create_url, json=payload, headers=CORE_HEADERS, timeout=10)\n    assert resp_cust.status_code == 200, f\"Expected 200, got {resp_cust.status_code}: {resp_cust.text}\"\n    customer_id = resp_cust.json().get(\"customerId\")\n\n    # 2. Get customer in customer-management\n    get_cust_url = get_url(\"customer-management-backend\", f\"/customers/{customer_id}\")\n    resp_get_cust = requests.get(get_cust_url, timeout=10)\n    assert resp_get_cust.status_code == 200, f\"Expected 200, got {resp_get_cust.status_code}: {resp_get_cust.text}\"\n    assert resp_get_cust.json().get(\"customerId\") == customer_id\n\n    # 3. Negative: Acknowledge with empty lastAcknowledgedInteractionId (400)\n    ack_url = get_url(\"customer-management-backend\", f\"/interaction-logs/{customer_id}\")\n    bad_ack_payload = {\"lastAcknowledgedInteractionId\": \"\"}\n    resp_bad_ack = requests.patch(ack_url, json=bad_ack_payload, timeout=10)\n    assert resp_bad_ack.status_code == 400, f\"Expected 400, got {resp_bad_ack.status_code}: {resp_bad_ack.text}\"\n\n    # 4. Negative: Acknowledge for customer with no log (404)\n    valid_ack_payload = {\"lastAcknowledgedInteractionId\": \"some-id-123\"}\n    resp_not_found_ack = requests.patch(ack_url, json=valid_ack_payload, timeout=10)\n    assert resp_not_found_ack.status_code == 404, f\"Expected 404, got {resp_not_found_ack.status_code}: {resp_not_found_ack.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1186,
+    "name": "Policy Management Compute Risk Factor",
+    "status": "pending",
+    "code": "def test_policy_management_compute_risk_factor():\n    risk_payload = {\n        \"birthday\": \"1990-01-01T00:00:00Z\",\n        \"postalCode\": \"12345\"\n    }\n    risk_url = get_url(\"policy-management-backend\", \"/riskfactor/compute\")\n    resp_risk = requests.post(risk_url, json=risk_payload, headers=POLICY_HEADERS, timeout=10)\n    assert resp_risk.status_code == 200, f\"Expected 200, got {resp_risk.status_code}: {resp_risk.text}\"\n    assert \"riskFactor\" in resp_risk.json()",
+    "endpoint": {
+      "path": "",
+      "method": "PUT",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  }
+]

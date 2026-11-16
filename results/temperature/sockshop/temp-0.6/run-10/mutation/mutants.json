@@ -1,0 +1,560 @@
+[
+  {
+    "mutant_id": "CARTS-M01",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 905,
+        "name": "Cart Management",
+        "error": "assert 1 == 2"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: assert 7.99 == (7.99 * 2)"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M02",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 905,
+        "name": "Cart Management",
+        "error": "AssertionError: Expected 201, got 200: {\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":2,\"unitPrice\":7.99} | assert 200 == 201"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 201, got 200: {\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":2,\"unitPrice\":7.99} | assert 200 == 201"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M03",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 905,
+        "name": "Cart Management",
+        "error": "AssertionError: Expected 404, got 200: | assert 200 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M04",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M05",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 905,
+        "name": "Cart Management",
+        "error": "AssertionError: Expected 404, got 200: {\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":5,\"unitPrice\":7.99} | assert 200 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M06",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M06",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M07",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 906,
+        "name": "Cart Merge",
+        "error": "AssertionError: Expected 404, got 202: | assert 202 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M08",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M08",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M01",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 904,
+        "name": "Catalogue Retrieval",
+        "error": "AssertionError: Expected 404, got 200: | assert 200 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M02",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 904,
+        "name": "Catalogue Retrieval",
+        "error": "AssertionError: Expected 200, got 404: No handler found for path: /catalogue/a0a4f044-b040-410d-8ead-4de0446aec7e | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M03",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 906,
+        "name": "Cart Merge",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 904,
+        "name": "Catalogue Retrieval",
+        "error": "AssertionError: Expected 200, got 500: | assert 500 == 200"
+      },
+      {
+        "id": 905,
+        "name": "Cart Management",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 908,
+        "name": "Order Placement Negative Cases",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M04",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "IndexError: list index out of range"
+      },
+      {
+        "id": 905,
+        "name": "Cart Management",
+        "error": "IndexError: list index out of range"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "IndexError: list index out of range"
+      },
+      {
+        "id": 908,
+        "name": "Order Placement Negative Cases",
+        "error": "IndexError: list index out of range"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M05",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M01",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 200, got 404: No handler found for path: /orders/search/customerId | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M02",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M03",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 201, got 200: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/bff29e7e\"}},\"address\":{\"city\":\"City\",\"country\":\"UK\",\"number\":\"123\",\"postcode\":\"123\",\"street\":\"Main\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************5678\"},\"customer\":{\"email\":\"a@b.c\",\"firstName\":\"A\",\"lastName\":\"B\",\"username\":\"user_266af91f\"},\"date\":\"2026-07-05T12:00:38\",\"id\":\"bff29e7e\",\"items\":[{\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":2,\"unitPrice\":7.99}],\"payment\":{\"authorised"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M04",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: assert 9.99 == (7.99 * 2)"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M05",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: assert 16.98 == (7.99 * 2)"
+      },
+      {
+        "id": 908,
+        "name": "Order Placement Negative Cases",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/cc39beb0\"}},\"address\":{\"city\":\"City\",\"country\":\"UK\",\"number\":\"123\",\"postcode\":\"123\",\"street\":\"Main\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************5678\"},\"customer\":{\"email\":\"a@b.c\",\"firstName\":\"A\",\"lastName\":\"B\",\"username\":\"user_3a65728f\"},\"date\":\"2026-07-05T12:02:10\",\"id\":\"cc39beb0\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipment\":{\"carrier\":\"UPS\",\"deliveryDa"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M06",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "AssertionError: Expected 200, got 500: | assert 500 == 200"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment authorized.\"} | assert 406 == 201"
+      },
+      {
+        "id": 908,
+        "name": "Order Placement Negative Cases",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/8452483d\"}},\"address\":{\"city\":\"City\",\"country\":\"UK\",\"number\":\"123\",\"postcode\":\"123\",\"street\":\"Main\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************5678\"},\"customer\":{\"email\":\"a@b.c\",\"firstName\":\"A\",\"lastName\":\"B\",\"username\":\"user_05b9f83a\"},\"date\":\"2026-07-05T12:02:52\",\"id\":\"8452483d\",\"items\":[],\"payment\":{\"authorised\":false,\"message\":\"Invalid payment amount.\"},\"shipment\":{\"carrier\":\"UPS\",\"deliv"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M07",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "AssertionError: Expected 200, got 500: | assert 500 == 200"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 200, got 500: | assert 500 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M08",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "AssertionError: Expected 200, got 500: | assert 500 == 200"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "assert False"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M09",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "AssertionError: Expected 200, got 500: | assert 500 == 200"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Invalid payment amount.\"} | assert 406 == 201"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M01",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "AssertionError: assert True is False"
+      },
+      {
+        "id": 908,
+        "name": "Order Placement Negative Cases",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/cef0cd8b\"}},\"address\":{\"city\":\"City\",\"country\":\"UK\",\"number\":\"123\",\"postcode\":\"123\",\"street\":\"Main\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************5678\"},\"customer\":{\"email\":\"a@b.c\",\"firstName\":\"A\",\"lastName\":\"B\",\"username\":\"user_85d21729\"},\"date\":\"2026-07-05T12:06:11\",\"id\":\"cef0cd8b\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipment\":{\"carrier\":\"UPS\",\"deliveryDa"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M02",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 908,
+        "name": "Order Placement Negative Cases",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/d073927f\"}},\"address\":{\"city\":\"City\",\"country\":\"UK\",\"number\":\"123\",\"postcode\":\"123\",\"street\":\"Main\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************5678\"},\"customer\":{\"email\":\"a@b.c\",\"firstName\":\"A\",\"lastName\":\"B\",\"username\":\"user_4bac7dc1\"},\"date\":\"2026-07-05T12:06:56\",\"id\":\"d073927f\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipment\":{\"carrier\":\"UPS\",\"deliveryDa"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M03",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "AssertionError: assert False is True"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment authorized.\"} | assert 406 == 201"
+      },
+      {
+        "id": 908,
+        "name": "Order Placement Negative Cases",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/09e7bff8\"}},\"address\":{\"city\":\"City\",\"country\":\"UK\",\"number\":\"123\",\"postcode\":\"123\",\"street\":\"Main\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************5678\"},\"customer\":{\"email\":\"a@b.c\",\"firstName\":\"A\",\"lastName\":\"B\",\"username\":\"user_9055cd16\"},\"date\":\"2026-07-05T12:07:38\",\"id\":\"09e7bff8\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Invalid payment amount.\"},\"shipment\":{\"carrier\":\"UPS\",\"delive"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M04",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 909,
+        "name": "Payment And Shipping Direct",
+        "error": "AssertionError: assert False is True"
+      },
+      {
+        "id": 907,
+        "name": "E2e Order Placement",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment declined: amount exceeds 100.00\"} | assert 406 == 201"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M01",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M02",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M03",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M04",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M01",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 901,
+        "name": "User Registration And Login",
+        "error": "AssertionError: Expected 200, got 401: Basic authentication header is missing | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M02",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 901,
+        "name": "User Registration And Login",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M03",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 901,
+        "name": "User Registration And Login",
+        "error": "AssertionError: Expected 200, got 409: User with that ID already exists | assert 409 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M04",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 901,
+        "name": "User Registration And Login",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M05",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M06",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 903,
+        "name": "User Deletion",
+        "error": "AssertionError: assert False is True"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M07",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 903,
+        "name": "User Deletion",
+        "error": "AssertionError: assert True is False"
+      }
+    ],
+    "error": null
+  }
+]

@@ -1,0 +1,453 @@
+[
+  {
+    "mutant_id": "CARTS-M01",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 987,
+        "name": "Carts Add Item And",
+        "error": "assert False"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M02",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 987,
+        "name": "Carts Add Item And",
+        "error": "AssertionError: Expected 201, got 200: {\"itemId\":\"item-b98f6aac-9653-48c3-b795-101309a0a77b\",\"quantity\":2,\"unitPrice\":9.99} | assert 200 == 201"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M03",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 989,
+        "name": "Carts Item",
+        "error": "AssertionError: Expected 404, got 200: | assert 200 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M04",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M05",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 989,
+        "name": "Carts Item",
+        "error": "AssertionError: Expected 404, got 200: {\"itemId\":\"item-ac3ea936-8460-4840-b5da-b2ea61fbdb79\",\"quantity\":1,\"unitPrice\":5.0} | assert 200 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M06",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M06",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M07",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 990,
+        "name": "Carts Merge Not Found",
+        "error": "AssertionError: Expected 404, got 202: | assert 202 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M08",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M08",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M01",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 982,
+        "name": "Catalogue Item Not Found",
+        "error": "AssertionError: Expected 404, got 200: | assert 200 == 404"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M02",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 981,
+        "name": "Catalogue Items",
+        "error": "AssertionError: Expected 200, got 404: No handler found for path: /catalogue/a0a4f044-b040-410d-8ead-4de0446aec7e | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M03",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 981,
+        "name": "Catalogue Items",
+        "error": "AssertionError: Expected 200, got 500: | assert 500 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M04",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M05",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M01",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M02",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M03",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 991,
+        "name": "Orders Create And",
+        "error": "AssertionError: Expected 201, got 200: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/c96b6049\"}},\"address\":{\"city\":\"C\",\"country\":\"C\",\"number\":\"1\",\"postcode\":\"1\",\"street\":\"S\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user-6368aee0-7c39-4c8e-a342-e4355ed4f8bd@test.com\",\"username\":\"user-6368aee0-7c39-4c8e-a342-e4355ed4f8bd\"},\"date\":\"2026-06-20T19:22:56\",\"id\":\"c96b6049\",\"items\":[{\"itemId\":\"item1\",\"quantity\":1,\"unitPrice\":10.0}],\"payment\":{\"authorised"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M04",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M05",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 992,
+        "name": "Orders Create Missing Cart",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/2b9f2f9f\"}},\"address\":{\"city\":\"C\",\"country\":\"C\",\"number\":\"1\",\"postcode\":\"1\",\"street\":\"S\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user-d3bb3885-7002-4c67-b801-1000275ea858@test.com\",\"username\":\"user-d3bb3885-7002-4c67-b801-1000275ea858\"},\"date\":\"2026-06-20T19:24:52\",\"id\":\"2b9f2f9f\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipmen"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M06",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 991,
+        "name": "Orders Create And",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment authorized.\"} | assert 406 == 201"
+      },
+      {
+        "id": 992,
+        "name": "Orders Create Missing Cart",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/849ee434\"}},\"address\":{\"city\":\"C\",\"country\":\"C\",\"number\":\"1\",\"postcode\":\"1\",\"street\":\"S\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user-a6a7733a-2462-4d31-857f-a6e674b28c62@test.com\",\"username\":\"user-a6a7733a-2462-4d31-857f-a6e674b28c62\"},\"date\":\"2026-06-20T19:25:48\",\"id\":\"849ee434\",\"items\":[],\"payment\":{\"authorised\":false,\"message\":\"Invalid payment amount.\"},\"sh"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M07",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M07",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M08",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M08",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M09",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 991,
+        "name": "Orders Create And",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Invalid payment amount.\"} | assert 406 == 201"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M01",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 994,
+        "name": "Payment Authorize Declined",
+        "error": "AssertionError: assert True is False"
+      },
+      {
+        "id": 992,
+        "name": "Orders Create Missing Cart",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/eeb578b6\"}},\"address\":{\"city\":\"C\",\"country\":\"C\",\"number\":\"1\",\"postcode\":\"1\",\"street\":\"S\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user-795567df-9e1a-4c87-ac21-e13fb6e7b9d5@test.com\",\"username\":\"user-795567df-9e1a-4c87-ac21-e13fb6e7b9d5\"},\"date\":\"2026-06-20T19:30:06\",\"id\":\"eeb578b6\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipmen"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M02",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 992,
+        "name": "Orders Create Missing Cart",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/40859331\"}},\"address\":{\"city\":\"C\",\"country\":\"C\",\"number\":\"1\",\"postcode\":\"1\",\"street\":\"S\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user-63c27546-99df-44ad-afb2-8526bfa3c2cc@test.com\",\"username\":\"user-63c27546-99df-44ad-afb2-8526bfa3c2cc\"},\"date\":\"2026-06-20T19:30:45\",\"id\":\"40859331\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipmen"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M03",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 994,
+        "name": "Payment Authorize Declined",
+        "error": "AssertionError: assert True is False"
+      },
+      {
+        "id": 993,
+        "name": "Payment Authorize And",
+        "error": "AssertionError: assert False is True"
+      },
+      {
+        "id": 992,
+        "name": "Orders Create Missing Cart",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/6bb79117\"}},\"address\":{\"city\":\"C\",\"country\":\"C\",\"number\":\"1\",\"postcode\":\"1\",\"street\":\"S\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user-9dfe359f-c800-48de-ac04-ef8ccc5f1850@test.com\",\"username\":\"user-9dfe359f-c800-48de-ac04-ef8ccc5f1850\"},\"date\":\"2026-06-20T19:31:38\",\"id\":\"6bb79117\",\"items\":[],\"payment\":{\"authorised\":true,\"message\":\"Invalid payment amount.\"},\"shi"
+      },
+      {
+        "id": 991,
+        "name": "Orders Create And",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment authorized.\"} | assert 406 == 201"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M04",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 993,
+        "name": "Payment Authorize And",
+        "error": "AssertionError: assert False is True"
+      },
+      {
+        "id": 991,
+        "name": "Orders Create And",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment declined: amount exceeds 100.00\"} | assert 406 == 201"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M01",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M02",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M03",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M04",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M01",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 983,
+        "name": "User Register And Login",
+        "error": "AssertionError: Expected 200, got 401: Basic authentication header is missing | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M02",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 983,
+        "name": "User Register And Login",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M03",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 984,
+        "name": "User Register Conflict",
+        "error": "AssertionError: Expected 200, got 409: User with that ID already exists | assert 409 == 200"
+      },
+      {
+        "id": 983,
+        "name": "User Register And Login",
+        "error": "AssertionError: Expected 200, got 409: User with that ID already exists | assert 409 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M04",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 983,
+        "name": "User Register And Login",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M05",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M06",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M06",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M07",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M07",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  }
+]

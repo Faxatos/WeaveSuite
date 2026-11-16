@@ -1,0 +1,86 @@
+[
+  {
+    "id": 450,
+    "name": "Customer Registration And Policy Creation",
+    "status": "pending",
+    "code": "def test_customer_registration_and_policy_creation(registered_customer):\n    headers, customer_id, customer_payload = registered_customer\n\n    # Follow-up GET on self-service\n    get_cust_url = get_url(\"customer-self-service-backend\", f\"/customers/{customer_id}\")\n    get_cust_resp = requests.get(get_cust_url, headers=headers, timeout=10)\n    assert get_cust_resp.status_code == 200, f\"Expected 200, got {get_cust_resp.status_code}: {get_cust_resp.text}\"\n    assert get_cust_resp.json().get(\"customerId\") == customer_id\n\n    # Create Policy on policy-management-backend\n    policy_url = get_url(\"policy-management-backend\", \"/policies\")\n    policy_payload = {\n        \"customerId\": customer_id,\n        \"policyPeriod\": {\"startDate\": \"2023-01-01T00:00:00Z\", \"endDate\": \"2024-01-01T00:00:00Z\"},\n        \"policyType\": \"Life\",\n        \"deductible\": {\"amount\": 100, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 10000, \"currency\": \"USD\"},\n        \"insurancePremium\": {\"amount\": 50, \"currency\": \"USD\"},\n        \"insuringAgreement\": {\"agreementItems\": [{\"title\": \"Item 1\", \"description\": \"Desc 1\"}]}\n    }\n    policy_resp = requests.post(policy_url, headers=POLICY_HEADERS, json=policy_payload, timeout=10)\n    assert policy_resp.status_code == 200, f\"Expected 200, got {policy_resp.status_code}: {policy_resp.text}\"\n    policy_id = policy_resp.json().get(\"policyId\")\n    assert policy_id is not None\n\n    # Follow-up GET on policy-management-backend\n    get_policy_url = get_url(\"policy-management-backend\", f\"/policies/{policy_id}\")\n    get_policy_resp = requests.get(get_policy_url, headers=POLICY_HEADERS, timeout=10)\n    assert get_policy_resp.status_code == 200, f\"Expected 200, got {get_policy_resp.status_code}: {get_policy_resp.text}\"\n    policy_data = get_policy_resp.json()\n    assert policy_data.get(\"policyId\") == policy_id\n    assert policy_data.get(\"customer\") == customer_id\n    assert policy_data.get(\"policyType\") == \"Life\"\n    assert policy_data.get(\"deductible\", {}).get(\"amount\") == 100",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 451,
+    "name": "Insurance Quote Workflow",
+    "status": "pending",
+    "code": "def test_insurance_quote_workflow(registered_customer):\n    headers, customer_id, _ = registered_customer\n\n    # 1. Submit Quote Request on self-service\n    quote_req_url = get_url(\"customer-self-service-backend\", \"/insurance-quote-requests\")\n    quote_payload = {\n        \"customerInfo\": {\n            \"customerId\": customer_id,\n            \"firstname\": \"John\",\n            \"lastname\": \"Doe\",\n            \"contactAddress\": {\"streetAddress\": \"Main St 1\", \"postalCode\": \"8000\", \"city\": \"Zurich\"},\n            \"billingAddress\": {\"streetAddress\": \"Main St 1\", \"postalCode\": \"8000\", \"city\": \"Zurich\"}\n        },\n        \"insuranceOptions\": {\n            \"startDate\": \"2023-01-01T00:00:00Z\",\n            \"insuranceType\": \"Life\",\n            \"deductible\": {\"amount\": 100, \"currency\": \"USD\"}\n        }\n    }\n    quote_resp = requests.post(quote_req_url, headers=headers, json=quote_payload, timeout=10)\n    assert quote_resp.status_code == 200, f\"Expected 200, got {quote_resp.status_code}: {quote_resp.text}\"\n    quote_id = quote_resp.json().get(\"id\")\n    assert quote_id is not None\n\n    # Follow-up GET on self-service\n    get_quote_url = get_url(\"customer-self-service-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    get_quote_resp = requests.get(get_quote_url, headers=headers, timeout=10)\n    assert get_quote_resp.status_code == 200, f\"Expected 200, got {get_quote_resp.status_code}: {get_quote_resp.text}\"\n    assert get_quote_resp.json().get(\"id\") == quote_id\n\n    # 2. Back-office polls for the request on policy-management\n    policy_quote_url = get_url(\"policy-management-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    found = False\n    for _ in range(15):\n        poll_resp = requests.get(policy_quote_url, headers=POLICY_HEADERS, timeout=10)\n        if poll_resp.status_code == 200:\n            found = True\n            break\n        time.sleep(1)\n    assert found, \"Quote request did not propagate to policy-management-backend in time\"\n\n    # 3. Back-office drafts a quote\n    draft_payload = {\n        \"status\": \"QUOTE_RECEIVED\",\n        \"expirationDate\": \"2023-12-31T00:00:00Z\",\n        \"insurancePremium\": {\"amount\": 50, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 10000, \"currency\": \"USD\"}\n    }\n    draft_resp = requests.patch(policy_quote_url, headers=POLICY_HEADERS, json=draft_payload, timeout=10)\n    assert draft_resp.status_code == 200, f\"Expected 200, got {draft_resp.status_code}: {draft_resp.text}\"\n\n    # Follow-up GET on policy-management\n    get_draft_resp = requests.get(policy_quote_url, headers=POLICY_HEADERS, timeout=10)\n    assert get_draft_resp.status_code == 200\n\n    # 4. Self-service polls for QUOTE_RECEIVED status\n    quote_received = False\n    for _ in range(15):\n        ss_poll_resp = requests.get(get_quote_url, headers=headers, timeout=10)\n        if ss_poll_resp.status_code == 200:\n            history = ss_poll_resp.json().get(\"statusHistory\", [])\n            if any(h.get(\"status\") == \"QUOTE_RECEIVED\" for h in history):\n                quote_received = True\n                break\n        time.sleep(1)\n    assert quote_received, \"QUOTE_RECEIVED status did not propagate to self-service-backend in time\"\n\n    # 5. Customer accepts the quote on self-service\n    accept_payload = {\n        \"status\": \"QUOTE_ACCEPTED\",\n        \"expirationDate\": \"2023-12-31T00:00:00Z\",\n        \"insurancePremium\": {\"amount\": 50, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 10000, \"currency\": \"USD\"}\n    }\n    accept_resp = requests.patch(get_quote_url, headers=headers, json=accept_payload, timeout=10)\n    assert accept_resp.status_code == 200, f\"Expected 200, got {accept_resp.status_code}: {accept_resp.text}\"\n\n    # Follow-up GET on self-service to verify acceptance\n    final_quote_resp = requests.get(get_quote_url, headers=headers, timeout=10)\n    assert final_quote_resp.status_code == 200\n    final_history = final_quote_resp.json().get(\"statusHistory\", [])\n    assert any(h.get(\"status\") == \"QUOTE_ACCEPTED\" for h in final_history)",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 452,
+    "name": "Insurance Quote Illegal State Transition",
+    "status": "pending",
+    "code": "def test_insurance_quote_illegal_state_transition(registered_customer):\n    headers, customer_id, _ = registered_customer\n\n    # Submit Quote Request\n    quote_req_url = get_url(\"customer-self-service-backend\", \"/insurance-quote-requests\")\n    quote_payload = {\n        \"customerInfo\": {\n            \"customerId\": customer_id,\n            \"firstname\": \"John\",\n            \"lastname\": \"Doe\",\n            \"contactAddress\": {\"streetAddress\": \"Main St 1\", \"postalCode\": \"8000\", \"city\": \"Zurich\"},\n            \"billingAddress\": {\"streetAddress\": \"Main St 1\", \"postalCode\": \"8000\", \"city\": \"Zurich\"}\n        },\n        \"insuranceOptions\": {\n            \"startDate\": \"2023-01-01T00:00:00Z\",\n            \"insuranceType\": \"Life\",\n            \"deductible\": {\"amount\": 100, \"currency\": \"USD\"}\n        }\n    }\n    quote_resp = requests.post(quote_req_url, headers=headers, json=quote_payload, timeout=10)\n    assert quote_resp.status_code == 200, f\"Expected 200, got {quote_resp.status_code}: {quote_resp.text}\"\n    quote_id = quote_resp.json().get(\"id\")\n\n    # Immediately attempt to accept the quote (Illegal state transition from REQUEST_SUBMITTED)\n    accept_url = get_url(\"customer-self-service-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    accept_payload = {\n        \"status\": \"QUOTE_ACCEPTED\",\n        \"expirationDate\": \"2023-12-31T00:00:00Z\",\n        \"insurancePremium\": {\"amount\": 50, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 10000, \"currency\": \"USD\"}\n    }\n    accept_resp = requests.patch(accept_url, headers=headers, json=accept_payload, timeout=10)\n    assert accept_resp.status_code == 401, f\"Expected 401, got {accept_resp.status_code}: {accept_resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 453,
+    "name": "Policy Creation Failed Dependency",
+    "status": "pending",
+    "code": "def test_policy_creation_failed_dependency():\n    # Attempt to create a policy with a non-existent customer ID\n    fake_customer_id = \"non-existent-customer-123\"\n    policy_url = get_url(\"policy-management-backend\", \"/policies\")\n    policy_payload = {\n        \"customerId\": fake_customer_id,\n        \"policyPeriod\": {\"startDate\": \"2023-01-01T00:00:00Z\", \"endDate\": \"2024-01-01T00:00:00Z\"},\n        \"policyType\": \"Life\",\n        \"deductible\": {\"amount\": 100, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 10000, \"currency\": \"USD\"},\n        \"insurancePremium\": {\"amount\": 50, \"currency\": \"USD\"},\n        \"insuringAgreement\": {\"agreementItems\": [{\"title\": \"Item 1\", \"description\": \"Desc 1\"}]}\n    }\n    policy_resp = requests.post(policy_url, headers=POLICY_HEADERS, json=policy_payload, timeout=10)\n    assert policy_resp.status_code == 424, f\"Expected 424, got {policy_resp.status_code}: {policy_resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 454,
+    "name": "Customer Core Missing Phone Number",
+    "status": "pending",
+    "code": "def test_customer_core_missing_phone_number():\n    # Attempt to create a customer in core without the required phoneNumber field\n    core_cust_url = get_url(\"customer-core\", \"/customers\")\n    payload_missing_phone = {\n        \"firstname\": \"Jane\",\n        \"lastname\": \"Smith\",\n        \"birthday\": \"1992-02-02T00:00:00Z\",\n        \"streetAddress\": \"Second St 2\",\n        \"postalCode\": \"9000\",\n        \"city\": \"Geneva\",\n        \"email\": \"jane.smith@example.com\"\n        # phoneNumber is intentionally omitted\n    }\n    resp = requests.post(core_cust_url, headers=CORE_HEADERS, json=payload_missing_phone, timeout=10)\n    assert resp.status_code == 500, f\"Expected 500, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 455,
+    "name": "Interaction Log Not Found",
+    "status": "pending",
+    "code": "def test_interaction_log_not_found():\n    # Attempt to acknowledge interactions for a non-existent log\n    fake_customer_id = \"fake-cust-999\"\n    ack_url = get_url(\"customer-management-backend\", f\"/interaction-logs/{fake_customer_id}\")\n    ack_payload = {\n        \"lastAcknowledgedInteractionId\": \"interaction-1\"\n    }\n    # No auth required for customer-management-backend based on spec\n    resp = requests.patch(ack_url, json=ack_payload, timeout=10)\n    assert resp.status_code == 404, f\"Expected 404, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  }
+]

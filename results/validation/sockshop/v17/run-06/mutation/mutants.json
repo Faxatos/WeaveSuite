@@ -1,0 +1,485 @@
+[
+  {
+    "mutant_id": "CARTS-M01",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/765d89d1\"}},\"address\":{\"city\":\"City\",\"country\":\"Country\",\"number\":\"1\",\"postcode\":\"123\",\"street\":\"Street\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user_jibahcvo@example.com\",\"firstName\":\"Order\",\"lastName\":\"Tester\",\"username\":\"user_jibahcvo\"},\"date\":\"2026-06-07T20:50:29\",\"id\":\"765d89d1\",\"items\":[{\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":1,\"unitPrice\":20.0}],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipment\":{\"carrier\":\"FEDEX\",\"deliveryDate\":\"2026-06-08\",\"trackingNumber\":\"231300687629630\"},\"status\":\"SHIPPED\",\"total\":20.0}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M02",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_carts_add_item_cumulative",
+        "error": "AssertionError: Expected 201, got 200: {\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":1,\"unitPrice\":7.99}"
+      },
+      {
+        "name": "test_carts_delete_item",
+        "error": "AssertionError: Expected 201, got 200: {\"itemId\":\"test_item_123\",\"quantity\":1,\"unitPrice\":10.0}"
+      },
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 201, got 200: {\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":1,\"unitPrice\":10.0}"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 201, got 200: {\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":10,\"unitPrice\":20.0}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M03",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M04",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_carts_add_item_cumulative",
+        "error": "assert 1 == 2"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M05",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_carts_delete_item",
+        "error": "AssertionError: assert 1 == 0"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M06",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_carts_add_item_cumulative",
+        "error": "assert 0 == 2"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M07",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M07",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CARTS-M08",
+    "service": "carts",
+    "image": "sockshop/carts-core:CARTS-M08",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M01",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M02",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_catalogue_list_and_get",
+        "error": "AssertionError: Expected 200, got 404: No handler found for path: /catalogue/a0a4f044-b040-410d-8ead-4de0446aec7e"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M03",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_catalogue_list_and_get",
+        "error": "AssertionError: Expected 200, got 500:"
+      },
+      {
+        "name": "test_carts_add_item_cumulative",
+        "error": "AssertionError: Expected 200, got 500:"
+      },
+      {
+        "name": "test_orders_create_success",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M04",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_catalogue_list_and_get",
+        "error": "AssertionError: Expected at least one item in catalogue"
+      },
+      {
+        "name": "test_carts_add_item_cumulative",
+        "error": "IndexError: list index out of range"
+      },
+      {
+        "name": "test_orders_create_success",
+        "error": "IndexError: list index out of range"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "IndexError: list index out of range"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CATALOG-M05",
+    "service": "catalog",
+    "image": "sockshop/catalog-core:CATALOG-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M01",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M02",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M03",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 201, got 200: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/9b9263b0\"}},\"address\":{\"city\":\"City\",\"country\":\"Country\",\"number\":\"1\",\"postcode\":\"123\",\"street\":\"Street\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user_mlqrgtba@example.com\",\"firstName\":\"Order\",\"lastName\":\"Tester\",\"username\":\"user_mlqrgtba\"},\"date\":\"2026-06-07T21:00:40\",\"id\":\"9b9263b0\",\"items\":[{\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":1,\"unitPrice\":10.0}],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipment\":{\"carrier\":\"FEDEX\",\"deliveryDate\":\"2026-06-08\",\"trackingNumber\":\"231300687629630\"},\"status\":\"SHIPPED\",\"total\":10.0}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M04",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/57826d96\"}},\"address\":{\"city\":\"City\",\"country\":\"Country\",\"number\":\"1\",\"postcode\":\"123\",\"street\":\"Street\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user_cfqdeaqe@example.com\",\"firstName\":\"Order\",\"lastName\":\"Tester\",\"username\":\"user_cfqdeaqe\"},\"date\":\"2026-06-07T21:01:34\",\"id\":\"57826d96\",\"items\":[{\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":10,\"unitPrice\":20.0}],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipment\":{\"carrier\":\"FEDEX\",\"deliveryDate\":\"2026-06-08\",\"trackingNumber\":\"231300687629630\"},\"status\":\"SHIPPED\",\"total\":30.0}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M05",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M06",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment authorized.\"}"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/e1ebc7c0\"}},\"address\":{\"city\":\"City\",\"country\":\"Country\",\"number\":\"1\",\"postcode\":\"123\",\"street\":\"Street\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user_juttdtqn@example.com\",\"firstName\":\"Order\",\"lastName\":\"Tester\",\"username\":\"user_juttdtqn\"},\"date\":\"2026-06-07T21:02:50\",\"id\":\"e1ebc7c0\",\"items\":[{\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":10,\"unitPrice\":20.0}],\"payment\":{\"authorised\":false,\"message\":\"Payment declined: amount exceeds 100.00\"},\"shipment\":{\"carrier\":\"FEDEX\",\"deliveryDate\":\"2026-06-08\",\"trackingNumber\":\"231300687629630\"},\"status\":\"SHIPPED\",\"total\":200.0}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M07",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M07",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M08",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M08",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "ORDERS-M09",
+    "service": "orders",
+    "image": "sockshop/orders-core:ORDERS-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Invalid payment amount.\"}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M01",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/5ec2d7e6\"}},\"address\":{\"city\":\"City\",\"country\":\"Country\",\"number\":\"1\",\"postcode\":\"123\",\"street\":\"Street\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user_tqxukfkp@example.com\",\"firstName\":\"Order\",\"lastName\":\"Tester\",\"username\":\"user_tqxukfkp\"},\"date\":\"2026-06-07T21:06:03\",\"id\":\"5ec2d7e6\",\"items\":[{\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":10,\"unitPrice\":20.0}],\"payment\":{\"authorised\":true,\"message\":\"Payment authorized.\"},\"shipment\":{\"carrier\":\"FEDEX\",\"deliveryDate\":\"2026-06-08\",\"trackingNumber\":\"231300687629630\"},\"status\":\"SHIPPED\",\"total\":200.0}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M02",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M03",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment authorized.\"}"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 406, got 201: {\"_links\":{\"self\":{\"href\":\"http://orders/orders/82fcd6d4\"}},\"address\":{\"city\":\"City\",\"country\":\"Country\",\"number\":\"1\",\"postcode\":\"123\",\"street\":\"Street\"},\"card\":{\"ccv\":\"123\",\"expires\":\"12/25\",\"longNum\":\"************3456\"},\"customer\":{\"email\":\"user_wrxzjykq@example.com\",\"firstName\":\"Order\",\"lastName\":\"Tester\",\"username\":\"user_wrxzjykq\"},\"date\":\"2026-06-07T21:07:23\",\"id\":\"82fcd6d4\",\"items\":[{\"itemId\":\"a0a4f044-b040-410d-8ead-4de0446aec7e\",\"quantity\":10,\"unitPrice\":20.0}],\"payment\":{\"authorised\":true,\"message\":\"Payment declined: amount exceeds 100.00\"},\"shipment\":{\"carrier\":\"FEDEX\",\"deliveryDate\":\"2026-06-08\",\"trackingNumber\":\"231300687629630\"},\"status\":\"SHIPPED\",\"total\":200.0}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "PAYMENT-M04",
+    "service": "payment",
+    "image": "sockshop/payment-core:PAYMENT-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 201, got 406: {\"message\":\"Payment declined: amount exceeds 100.00\"}"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M01",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M02",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M03",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "SHIPPING-M04",
+    "service": "shipping",
+    "image": "sockshop/shipping-core:SHIPPING-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M01",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_user_register_and_duplicate_409",
+        "error": "AssertionError: Expected 200, got 401: Basic authentication header is missing"
+      },
+      {
+        "name": "test_user_add_address_and_card",
+        "error": "AssertionError: Expected 200, got 401: Basic authentication header is missing"
+      },
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 200, got 401: Basic authentication header is missing"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 200, got 401: Basic authentication header is missing"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M02",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_user_register_and_duplicate_409",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      },
+      {
+        "name": "test_user_add_address_and_card",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      },
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M03",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_user_register_and_duplicate_409",
+        "error": "AssertionError: Expected 200, got 409: User with that ID already exists"
+      },
+      {
+        "name": "test_user_add_address_and_card",
+        "error": "AssertionError: Expected 200, got 409: User with that ID already exists"
+      },
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 200, got 409: User with that ID already exists"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 200, got 409: User with that ID already exists"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M04",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "name": "test_user_register_and_duplicate_409",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      },
+      {
+        "name": "test_user_add_address_and_card",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      },
+      {
+        "name": "test_orders_create_success",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      },
+      {
+        "name": "test_orders_create_payment_declined_406",
+        "error": "AssertionError: Expected 200, got 401: Invalid username or password"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M05",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M06",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M06",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "USERS-M07",
+    "service": "users",
+    "image": "sockshop/users-core:USERS-M07",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  }
+]

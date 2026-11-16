@@ -1,0 +1,156 @@
+[
+  {
+    "id": 928,
+    "name": "Wallet Topup And Transfer",
+    "status": "passed",
+    "code": "def test_wallet_topup_and_transfer():\n    _, token_a = create_user_and_login()\n    _, token_b = create_user_and_login()\n\n    wallet_a = get_wallet_info(token_a)\n    assert wallet_a.get(\"balance\") == 0, \"New wallet balance should be 0\"\n\n    wallet_b = get_wallet_info(token_b)\n    assert wallet_b.get(\"balance\") == 0, \"New wallet balance should be 0\"\n\n    # Topup A\n    url_topup = get_url(\"gateway\", \"/wallet/topup\")\n    resp_topup = requests.get(url_topup, headers={\"Authorization\": f\"Bearer {token_a}\"}, timeout=10)\n    assert resp_topup.status_code == 200, f\"Expected 200, got {resp_topup.status_code}: {resp_topup.text}\"\n    data_topup = resp_topup.json()\n    assert \"balance\" in data_topup, \"Expected 'balance' in topup response\"\n\n    wallet_a_post_topup = get_wallet_info(token_a)\n    balance_a = wallet_a_post_topup.get(\"balance\")\n    assert balance_a > 0, \"Balance should be greater than 0 after topup\"\n    assert data_topup.get(\"balance\") == balance_a, \"Topup response balance should match GET balance\"\n\n    # Transfer A to B\n    transfer_amount = balance_a / 2.0\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n    payload = {\"to\": wallet_b.get(\"address\"), \"amount\": transfer_amount}\n    resp_transfer = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token_a}\"}, json=payload, timeout=10)\n    assert resp_transfer.status_code == 200, f\"Expected 200, got {resp_transfer.status_code}: {resp_transfer.text}\"\n    data_transfer = resp_transfer.json()\n    assert data_transfer.get(\"balance\") == balance_a - transfer_amount, \"Transfer response should return updated sender balance\"\n\n    # Verify balances\n    wallet_a_final = get_wallet_info(token_a)\n    assert wallet_a_final.get(\"balance\") == balance_a - transfer_amount, \"Sender balance should decrease by transfer amount\"\n\n    wallet_b_final = get_wallet_info(token_b)\n    assert wallet_b_final.get(\"balance\") == transfer_amount, \"Recipient balance should increase by transfer amount\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:32:49.909855",
+    "duration": 1.1,
+    "errorMessage": null
+  },
+  {
+    "id": 929,
+    "name": "Wallet Topup Repetition Conflict",
+    "status": "passed",
+    "code": "def test_wallet_topup_repetition_conflict():\n    _, token = create_user_and_login()\n\n    url_topup = get_url(\"gateway\", \"/wallet/topup\")\n    resp_topup1 = requests.get(url_topup, headers={\"Authorization\": f\"Bearer {token}\"}, timeout=10)\n    assert resp_topup1.status_code == 200, f\"Expected 200, got {resp_topup1.status_code}: {resp_topup1.text}\"\n\n    wallet_after_first_topup = get_wallet_info(token)\n\n    # Repetition should fail\n    resp_topup2 = requests.get(url_topup, headers={\"Authorization\": f\"Bearer {token}\"}, timeout=10)\n    assert resp_topup2.status_code == 400, f\"Expected 400, got {resp_topup2.status_code}: {resp_topup2.text}\"\n    assert_api_error(resp_topup2)\n\n    wallet_after_second_topup = get_wallet_info(token)\n    assert wallet_after_second_topup.get(\"balance\") == wallet_after_first_topup.get(\"balance\"), \"Balance should not change on failed topup\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:32:52.240676",
+    "duration": 0.78,
+    "errorMessage": null
+  },
+  {
+    "id": 931,
+    "name": "Wallet Transfer Negative Amount",
+    "status": "passed",
+    "code": "def test_wallet_transfer_negative_amount():\n    _, token_sender = create_user_and_login()\n    _, token_recipient = create_user_and_login()\n\n    url_topup = get_url(\"gateway\", \"/wallet/topup\")\n    requests.get(url_topup, headers={\"Authorization\": f\"Bearer {token_sender}\"}, timeout=10)\n\n    wallet_sender_before = get_wallet_info(token_sender)\n    wallet_recipient_before = get_wallet_info(token_recipient)\n\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n    payload = {\"to\": wallet_recipient_before.get(\"address\"), \"amount\": -10.0}\n    resp_transfer = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token_sender}\"}, json=payload, timeout=10)\n    assert resp_transfer.status_code == 400, f\"Expected 400, got {resp_transfer.status_code}: {resp_transfer.text}\"\n    assert_api_error(resp_transfer)\n\n    wallet_sender_after = get_wallet_info(token_sender)\n    assert wallet_sender_after.get(\"balance\") == wallet_sender_before.get(\"balance\"), \"Sender balance should not change on failure\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:32:57.348329",
+    "duration": 0.94,
+    "errorMessage": null
+  },
+  {
+    "id": 927,
+    "name": "Auth Signup And User Me",
+    "status": "passed",
+    "code": "def test_auth_signup_and_user_me():\n    username, token = create_user_and_login()\n\n    url_me = get_url(\"gateway\", \"/user/me\")\n    resp_me = requests.get(url_me, headers={\"Authorization\": f\"Bearer {token}\"}, timeout=10)\n    assert resp_me.status_code == 200, f\"Expected 200, got {resp_me.status_code}: {resp_me.text}\"\n    data = resp_me.json()\n    assert data.get(\"user\") == username, \"Expected username to match\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:32:47.352252",
+    "duration": 0.83,
+    "errorMessage": null
+  },
+  {
+    "id": 932,
+    "name": "Wallet Transfer Recipient Not Found",
+    "status": "passed",
+    "code": "def test_wallet_transfer_recipient_not_found():\n    username, token = create_user_and_login()\n\n    url_topup = get_url(\"gateway\", \"/wallet/topup\")\n    requests.get(url_topup, headers={\"Authorization\": f\"Bearer {token}\"}, timeout=10)\n\n    wallet_sender_before = get_wallet_info(token)\n\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n    payload = {\"to\": username, \"amount\": 10.0}\n    resp_transfer = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token}\"}, json=payload, timeout=10)\n    assert resp_transfer.status_code == 400, f\"Expected 400, got {resp_transfer.status_code}: {resp_transfer.text}\"\n    assert_api_error(resp_transfer)\n\n    wallet_sender_after = get_wallet_info(token)\n    assert wallet_sender_after.get(\"balance\") == wallet_sender_before.get(\"balance\"), \"Sender balance should not change on failure\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:32:59.611341",
+    "duration": 0.77,
+    "errorMessage": null
+  },
+  {
+    "id": 930,
+    "name": "Wallet Transfer Insufficient Funds",
+    "status": "passed",
+    "code": "def test_wallet_transfer_insufficient_funds():\n    _, token_sender = create_user_and_login()\n    _, token_recipient = create_user_and_login()\n\n    wallet_sender_before = get_wallet_info(token_sender)\n    wallet_recipient_before = get_wallet_info(token_recipient)\n\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n    payload = {\"to\": wallet_recipient_before.get(\"address\"), \"amount\": 100.0}\n    resp_transfer = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token_sender}\"}, json=payload, timeout=10)\n    assert resp_transfer.status_code == 400, f\"Expected 400, got {resp_transfer.status_code}: {resp_transfer.text}\"\n    assert_api_error(resp_transfer)\n\n    wallet_sender_after = get_wallet_info(token_sender)\n    assert wallet_sender_after.get(\"balance\") == wallet_sender_before.get(\"balance\"), \"Sender balance should not change on failure\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:32:54.744260",
+    "duration": 0.99,
+    "errorMessage": null
+  },
+  {
+    "id": 933,
+    "name": "Wallet Transfer Zero Amount",
+    "status": "passed",
+    "code": "def test_wallet_transfer_zero_amount():\n    _, token_sender = create_user_and_login()\n    _, token_recipient = create_user_and_login()\n\n    url_topup = get_url(\"gateway\", \"/wallet/topup\")\n    requests.get(url_topup, headers={\"Authorization\": f\"Bearer {token_sender}\"}, timeout=10)\n\n    wallet_sender_before = get_wallet_info(token_sender)\n    wallet_recipient_before = get_wallet_info(token_recipient)\n\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n    payload = {\"to\": wallet_recipient_before.get(\"address\"), \"amount\": 0.0}\n    resp_transfer = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token_sender}\"}, json=payload, timeout=10)\n    assert resp_transfer.status_code == 200, f\"Expected 200, got {resp_transfer.status_code}: {resp_transfer.text}\"\n\n    wallet_sender_after = get_wallet_info(token_sender)\n    assert wallet_sender_after.get(\"balance\") == wallet_sender_before.get(\"balance\"), \"Balance should remain unchanged for 0 amount transfer\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:33:02.109690",
+    "duration": 0.94,
+    "errorMessage": null
+  },
+  {
+    "id": 934,
+    "name": "Wallet Transfer Own Address",
+    "status": "passed",
+    "code": "def test_wallet_transfer_own_address():\n    _, token = create_user_and_login()\n\n    url_topup = get_url(\"gateway\", \"/wallet/topup\")\n    requests.get(url_topup, headers={\"Authorization\": f\"Bearer {token}\"}, timeout=10)\n\n    wallet_before = get_wallet_info(token)\n\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n    payload = {\"to\": wallet_before.get(\"address\"), \"amount\": 10.0}\n    resp_transfer = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token}\"}, json=payload, timeout=10)\n    assert resp_transfer.status_code == 200, f\"Expected 200, got {resp_transfer.status_code}: {resp_transfer.text}\"\n\n    wallet_after = get_wallet_info(token)\n    assert wallet_after.get(\"balance\") == wallet_before.get(\"balance\"), \"Balance should remain unchanged when transferring to own address\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:33:04.244812",
+    "duration": 0.69,
+    "errorMessage": null
+  },
+  {
+    "id": 935,
+    "name": "Wallet Transfer Missing Fields",
+    "status": "passed",
+    "code": "def test_wallet_transfer_missing_fields():\n    _, token_sender = create_user_and_login()\n    _, token_recipient = create_user_and_login()\n\n    wallet_recipient = get_wallet_info(token_recipient)\n\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n\n    # Missing 'to'\n    payload_no_to = {\"amount\": 10.0}\n    resp_no_to = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token_sender}\"}, json=payload_no_to, timeout=10)\n    assert resp_no_to.status_code == 400, f\"Expected 400, got {resp_no_to.status_code}: {resp_no_to.text}\"\n    assert_api_error(resp_no_to)\n\n    # Missing 'amount'\n    payload_no_amount = {\"to\": wallet_recipient.get(\"address\")}\n    resp_no_amount = requests.post(url_transfer, headers={\"Authorization\": f\"Bearer {token_sender}\"}, json=payload_no_amount, timeout=10)\n    assert resp_no_amount.status_code == 400, f\"Expected 400, got {resp_no_amount.status_code}: {resp_no_amount.text}\"\n    assert_api_error(resp_no_amount)",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:33:06.846689",
+    "duration": 1.01,
+    "errorMessage": null
+  },
+  {
+    "id": 936,
+    "name": "Auth Missing Password",
+    "status": "passed",
+    "code": "def test_auth_missing_password():\n    username = \"user_\" + \"\".join(random.choices(string.ascii_lowercase + string.digits, k=8))\n\n    url_signup = get_url(\"gateway\", \"/auth/signup\")\n    resp_signup = requests.post(url_signup, json={\"user\": username}, timeout=10)\n    assert resp_signup.status_code == 400, f\"Expected 400, got {resp_signup.status_code}: {resp_signup.text}\"\n    assert_api_error(resp_signup)\n\n    url_login = get_url(\"gateway\", \"/auth/login\")\n    resp_login = requests.post(url_login, json={\"user\": username}, timeout=10)\n    assert resp_login.status_code == 400, f\"Expected 400, got {resp_login.status_code}: {resp_login.text}\"\n    assert_api_error(resp_login)",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:33:08.842012",
+    "duration": 0.48,
+    "errorMessage": null
+  },
+  {
+    "id": 937,
+    "name": "Unauthorized Access",
+    "status": "passed",
+    "code": "def test_unauthorized_access():\n    _, token = create_user_and_login()\n    wallet = get_wallet_info(token)\n\n    url_me = get_url(\"gateway\", \"/user/me\")\n    resp_me = requests.get(url_me, timeout=10)\n    assert resp_me.status_code == 401, f\"Expected 401, got {resp_me.status_code}: {resp_me.text}\"\n\n    url_balance = get_url(\"gateway\", \"/wallet/balance\")\n    resp_balance = requests.get(url_balance, timeout=10)\n    assert resp_balance.status_code == 401, f\"Expected 401, got {resp_balance.status_code}: {resp_balance.text}\"\n\n    url_topup = get_url(\"gateway\", \"/wallet/topup\")\n    resp_topup = requests.get(url_topup, timeout=10)\n    assert resp_topup.status_code == 401, f\"Expected 401, got {resp_topup.status_code}: {resp_topup.text}\"\n\n    url_transfer = get_url(\"gateway\", \"/wallet/transfer\")\n    resp_transfer = requests.post(url_transfer, json={\"to\": wallet.get(\"address\"), \"amount\": 10.0}, timeout=10)\n    assert resp_transfer.status_code == 401, f\"Expected 401, got {resp_transfer.status_code}: {resp_transfer.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-03T01:33:11.143322",
+    "duration": 0.67,
+    "errorMessage": null
+  }
+]

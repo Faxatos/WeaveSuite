@@ -1,0 +1,533 @@
+[
+  {
+    "mutant_id": "CORE-M01",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 691,
+        "name": "Customer Core Create And Update Customer",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 693,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 694,
+        "name": "Policy Management Create Policy Missing Customer",
+        "error": "AssertionError: Expected 424, got 502: { | \"timestamp\" : \"2026-07-07T23:37:48.826+00:00\", | \"trace\" : \"com.lakesidemutual.policymanagement.interfaces.dtos.CustomerCoreNotAvailableException: Failed to connect to Customer Core.\\n\\tat com.lakesidemutual.policymanagement.infrastructure.CustomerCoreRemoteProxy.getCustomersById(CustomerCoreRemoteProxy.java:65)\\n\\tat com.lakesidemutual.policymanagement.interfaces.PolicyInformationHolder.createPolicy(PolicyInformationHolder.java:85)\\n\\tat java.base/jdk."
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 697,
+        "name": "Customer Management Interaction Logs Negative",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M02",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 691,
+        "name": "Customer Core Create And Update Customer",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 693,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 697,
+        "name": "Customer Management Interaction Logs Negative",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 694,
+        "name": "Policy Management Create Policy Missing Customer",
+        "error": "AssertionError: Expected 424, got 502: { | \"timestamp\" : \"2026-07-07T23:38:37.717+00:00\", | \"trace\" : \"com.lakesidemutual.policymanagement.interfaces.dtos.CustomerCoreNotAvailableException: Failed to connect to Customer Core.\\n\\tat com.lakesidemutual.policymanagement.infrastructure.CustomerCoreRemoteProxy.getCustomersById(CustomerCoreRemoteProxy.java:65)\\n\\tat com.lakesidemutual.policymanagement.interfaces.PolicyInformationHolder.createPolicy(PolicyInformationHolder.java:85)\\n\\tat java.base/jdk."
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M03",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 691,
+        "name": "Customer Core Create And Update Customer",
+        "error": "KeyError: 'customerId'"
+      },
+      {
+        "id": 693,
+        "name": "Policy Management Create And Policy",
+        "error": "KeyError: 'customerId'"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 697,
+        "name": "Customer Management Interaction Logs Negative",
+        "error": "KeyError: 'customerId'"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M04",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 691,
+        "name": "Customer Core Create And Update Customer",
+        "error": "AssertionError: Expected 200, got 404: { | \"timestamp\" : \"2026-07-07T23:40:03.732+00:00\", | \"status\" : 404, | \"error\" : \"Not Found\", | \"path\" : \"/customers/md81xgzbrw\" | } | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M05",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M06",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M06",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M07",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 691,
+        "name": "Customer Core Create And Update Customer",
+        "error": "IndexError: list index out of range"
+      },
+      {
+        "id": 693,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 200, got 424: { | \"timestamp\" : \"2026-07-07T23:42:28.390+00:00\", | \"trace\" : \"com.lakesidemutual.policymanagement.interfaces.dtos.UnknownCustomerException: Failed to find a customer with id '{}'\\n\\tat com.lakesidemutual.policymanagement.interfaces.PolicyInformationHolder.createPolicy(PolicyInformationHolder.java:89)\\n\\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\\n\\tat java.base/java.lang.reflect.Method.invoke(M"
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M08",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M08",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M09",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: assert 'QUOTE_ACCEPTED' in ['REQUEST_SUBMITTED', 'QUOTE_RECEIVED', 'QUOTE_EXPIRED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M01",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M02",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M03",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: assert 'QUOTE_ACCEPTED' in ['REQUEST_SUBMITTED', 'QUOTE_RECEIVED', 'QUOTE_EXPIRED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M04",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: assert 'QUOTE_ACCEPTED' in ['REQUEST_SUBMITTED', 'QUOTE_RECEIVED', 'QUOTE_EXPIRED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M01",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M02",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "KeyError: 'token'"
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "KeyError: 'token'"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "KeyError: 'token'"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M03",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-07T23:50:26.076+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "UnboundLocalError: cannot access local variable 'history' where it is not associated with a value"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M04",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-07T23:51:26.608+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: assert 'QUOTE_ACCEPTED' in ['REQUEST_SUBMITTED', 'QUOTE_RECEIVED', 'QUOTE_EXPIRED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M05",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M06",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M07",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "AssertionError: Expected 401, got 200: { | \"id\" : 1, | \"date\" : \"2026-07-07T23:53:43.493+00:00\", | \"statusHistory\" : [ { | \"date\" : \"2026-07-07T23:53:43.493+00:00\", | \"status\" : \"REQUEST_SUBMITTED\" | } ], | \"customerInfo\" : { | \"customerId\" : \"ysaqenofiz\", | \"firstname\" : \"Dave\", | \"lastname\" : \"Defiant\", | \"contactAddress\" : { | \"streetAddress\" : \"99 Rulebreaker Ave\", | \"postalCode\" : \"12345\", | \"city\" : \"Rebel City\" | }, | \"billingAddress\" : { | \"streetAddress\" : \"99 Rulebreaker Ave\", | \"posta"
+      },
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: assert 'QUOTE_ACCEPTED' in ['REQUEST_SUBMITTED', 'QUOTE_RECEIVED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M08",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-07T23:54:34.011+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "AssertionError: Expected 200, got 404: { | \"timestamp\" : \"2026-07-07T23:54:37.835+00:00\", | \"status\" : 404, | \"error\" : \"Not Found\", | \"path\" : \"/customers/frckc37qed\" | } | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M09",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 696,
+        "name": "Insurance Quote Request Illegal Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-07T23:55:18.857+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      },
+      {
+        "id": 692,
+        "name": "Customer Self Signup And Register",
+        "error": "KeyError: 'customerId'"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M01",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M02",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M03",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M04",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M05",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M06",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 694,
+        "name": "Policy Management Create Policy Missing Customer",
+        "error": "AssertionError: Expected 424, got 500: { | \"timestamp\" : \"2026-07-08T00:00:31.076+00:00\", | \"trace\" : \"java.lang.IndexOutOfBoundsException: Index 0 out of bounds for length 0\\n\\tat java.base/jdk.internal.util.Preconditions.outOfBounds(Preconditions.java:100)\\n\\tat java.base/jdk.internal.util.Preconditions.outOfBoundsCheckIndex(Preconditions.java:106)\\n\\tat java.base/jdk.internal.util.Preconditions.checkIndex(Preconditions.java:302)\\n\\tat java.base/java.util.Objects.checkIndex(Objects.java:385)\\n"
+      },
+      {
+        "id": 693,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 200, got 424: { | \"timestamp\" : \"2026-07-08T00:00:36.665+00:00\", | \"trace\" : \"com.lakesidemutual.policymanagement.interfaces.dtos.UnknownCustomerException: Failed to find a customer with id '{}'\\n\\tat com.lakesidemutual.policymanagement.interfaces.PolicyInformationHolder.createPolicy(PolicyInformationHolder.java:88)\\n\\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\\n\\tat java.base/java.lang.reflect.Method.invoke(M"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M07",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M07",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M08",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 693,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 204, got 200: | assert 200 == 204"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M09",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 695,
+        "name": "Insurance Quote Request Workflow",
+        "error": "AssertionError: Status QUOTE_RECEIVED did not propagate to self-service | assert 'QUOTE_RECEIVED' in ['REQUEST_SUBMITTED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M10",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M10",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  }
+]

@@ -1,0 +1,142 @@
+[
+  {
+    "id": 937,
+    "name": "User Registration And Login",
+    "status": "pending",
+    "code": "def test_user_registration_and_login():\n    username = random_string()\n    password = random_string()\n    email = f\"{username}@example.com\"\n\n    user_data = {\n        \"username\": username,\n        \"password\": password,\n        \"email\": email,\n        \"firstName\": \"Test\",\n        \"lastName\": \"User\"\n    }\n    resp = requests.post(get_url(\"user\", \"/register\"), json=user_data, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n\n    resp_get = requests.get(get_url(\"user\", f\"/customers/{username}\"), timeout=10)\n    assert resp_get.status_code == 200, f\"Expected 200, got {resp_get.status_code}: {resp_get.text}\"\n    customer = resp_get.json()\n    assert customer.get(\"username\") == username\n    assert customer.get(\"firstName\") == \"Test\"\n    assert customer.get(\"lastName\") == \"User\"\n    assert \"password\" not in customer or customer.get(\"password\") != password\n\n    resp_conflict = requests.post(get_url(\"user\", \"/register\"), json=user_data, timeout=10)\n    assert resp_conflict.status_code == 409, f\"Expected 409, got {resp_conflict.status_code}: {resp_conflict.text}\"\n\n    resp_login = requests.get(get_url(\"user\", \"/login\"), auth=(username, password), timeout=10)\n    assert resp_login.status_code == 200, f\"Expected 200, got {resp_login.status_code}: {resp_login.text}\"\n\n    resp_login_fail = requests.get(get_url(\"user\", \"/login\"), auth=(username, \"wrongpass\"), timeout=10)\n    assert resp_login_fail.status_code == 401, f\"Expected 401, got {resp_login_fail.status_code}: {resp_login_fail.text}\"\n\n    resp_custs = requests.get(get_url(\"user\", \"/customers\"), timeout=10)\n    assert resp_custs.status_code == 200, f\"Expected 200, got {resp_custs.status_code}: {resp_custs.text}\"\n\n    resp_del_cust = requests.delete(get_url(\"user\", f\"/customers/{username}\"), timeout=10)\n    assert resp_del_cust.status_code == 200, f\"Expected 200, got {resp_del_cust.status_code}: {resp_del_cust.text}\"\n    assert resp_del_cust.json().get(\"status\") is True",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 938,
+    "name": "User Address And Card Management",
+    "status": "pending",
+    "code": "def test_user_address_and_card_management():\n    username = random_string()\n    requests.post(get_url(\"user\", \"/register\"), json={\"username\": username, \"password\": \"pwd\", \"email\": f\"{username}@test.com\"}, timeout=10)\n\n    address_data = {\n        \"city\": \"London\",\n        \"country\": \"UK\",\n        \"number\": \"10\",\n        \"postcode\": \"EC1A 1BB\",\n        \"street\": \"Test Street\",\n        \"userID\": username\n    }\n    resp_addr = requests.post(get_url(\"user\", \"/addresses\"), json=address_data, timeout=10)\n    assert resp_addr.status_code == 200, f\"Expected 200, got {resp_addr.status_code}: {resp_addr.text}\"\n    addr_id = resp_addr.json().get(\"id\")\n    assert addr_id is not None\n\n    resp_get_addr = requests.get(get_url(\"user\", f\"/addresses/{addr_id}\"), timeout=10)\n    assert resp_get_addr.status_code == 200, f\"Expected 200, got {resp_get_addr.status_code}: {resp_get_addr.text}\"\n    addr_obj = resp_get_addr.json()\n    assert addr_obj.get(\"city\") == \"London\"\n    assert addr_obj.get(\"id\") == addr_id\n\n    card_data = {\n        \"ccv\": \"123\",\n        \"expires\": \"12/25\",\n        \"longNum\": \"1234567890123456\",\n        \"userID\": username\n    }\n    resp_card = requests.post(get_url(\"user\", \"/cards\"), json=card_data, timeout=10)\n    assert resp_card.status_code == 200, f\"Expected 200, got {resp_card.status_code}: {resp_card.text}\"\n    card_id = resp_card.json().get(\"id\")\n    assert card_id is not None\n\n    resp_get_card = requests.get(get_url(\"user\", f\"/cards/{card_id}\"), timeout=10)\n    assert resp_get_card.status_code == 200, f\"Expected 200, got {resp_get_card.status_code}: {resp_get_card.text}\"\n    card_obj = resp_get_card.json()\n    assert card_obj.get(\"id\") == card_id\n    assert card_obj.get(\"longNum\").endswith(\"3456\")\n    assert \"*\" in card_obj.get(\"longNum\")\n\n    resp_cust_addr = requests.get(get_url(\"user\", f\"/customers/{username}/addresses\"), timeout=10)\n    assert resp_cust_addr.status_code == 200, f\"Expected 200, got {resp_cust_addr.status_code}: {resp_cust_addr.text}\"\n    assert len(resp_cust_addr.json().get(\"_embedded\", {}).get(\"address\", [])) > 0\n\n    resp_cust_cards = requests.get(get_url(\"user\", f\"/customers/{username}/cards\"), timeout=10)\n    assert resp_cust_cards.status_code == 200, f\"Expected 200, got {resp_cust_cards.status_code}: {resp_cust_cards.text}\"\n    assert len(resp_cust_cards.json().get(\"_embedded\", {}).get(\"card\", [])) > 0\n\n    resp_empty_addr = requests.get(get_url(\"user\", \"/addresses\"), timeout=10)\n    assert resp_empty_addr.status_code == 200, f\"Expected 200, got {resp_empty_addr.status_code}: {resp_empty_addr.text}\"\n    assert len(resp_empty_addr.json().get(\"_embedded\", {}).get(\"address\", [])) == 0\n\n    resp_del_addr = requests.delete(get_url(\"user\", f\"/addresses/{addr_id}\"), timeout=10)\n    assert resp_del_addr.status_code == 200, f\"Expected 200, got {resp_del_addr.status_code}: {resp_del_addr.text}\"\n\n    resp_del_card = requests.delete(get_url(\"user\", f\"/cards/{card_id}\"), timeout=10)\n    assert resp_del_card.status_code == 200, f\"Expected 200, got {resp_del_card.status_code}: {resp_del_card.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 939,
+    "name": "Carts Management",
+    "status": "pending",
+    "code": "def test_carts_management():\n    customer_id = random_string()\n\n    resp_cat = requests.get(get_url(\"catalogue\", \"/catalogue\"), timeout=10)\n    assert resp_cat.status_code == 200, f\"Expected 200, got {resp_cat.status_code}: {resp_cat.text}\"\n    socks = resp_cat.json()\n    assert len(socks) > 0\n    item_id = socks[0][\"id\"]\n    price = socks[0][\"price\"]\n\n    item_data = {\n        \"itemId\": item_id,\n        \"quantity\": 2,\n        \"unitPrice\": price\n    }\n    resp_add = requests.post(get_url(\"carts\", f\"/carts/{customer_id}/items\"), json=item_data, timeout=10)\n    assert resp_add.status_code == 201, f\"Expected 201, got {resp_add.status_code}: {resp_add.text}\"\n\n    resp_get_item = requests.get(get_url(\"carts\", f\"/carts/{customer_id}/items/{item_id}\"), timeout=10)\n    assert resp_get_item.status_code == 200, f\"Expected 200, got {resp_get_item.status_code}: {resp_get_item.text}\"\n    assert resp_get_item.json().get(\"quantity\") == 2\n\n    update_data = {\n        \"itemId\": item_id,\n        \"quantity\": 5,\n        \"unitPrice\": price\n    }\n    resp_patch = requests.patch(get_url(\"carts\", f\"/carts/{customer_id}/items\"), json=update_data, timeout=10)\n    assert resp_patch.status_code == 202, f\"Expected 202, got {resp_patch.status_code}: {resp_patch.text}\"\n\n    resp_get_item2 = requests.get(get_url(\"carts\", f\"/carts/{customer_id}/items/{item_id}\"), timeout=10)\n    assert resp_get_item2.status_code == 200, f\"Expected 200, got {resp_get_item2.status_code}: {resp_get_item2.text}\"\n    assert resp_get_item2.json().get(\"quantity\") == 5\n\n    resp_del_item = requests.delete(get_url(\"carts\", f\"/carts/{customer_id}/items/{item_id}\"), timeout=10)\n    assert resp_del_item.status_code == 202, f\"Expected 202, got {resp_del_item.status_code}: {resp_del_item.text}\"\n\n    resp_get_item3 = requests.get(get_url(\"carts\", f\"/carts/{customer_id}/items/{item_id}\"), timeout=10)\n    assert resp_get_item3.status_code == 404, f\"Expected 404, got {resp_get_item3.status_code}: {resp_get_item3.text}\"\n\n    resp_del_cart = requests.delete(get_url(\"carts\", f\"/carts/{customer_id}\"), timeout=10)\n    assert resp_del_cart.status_code == 202, f\"Expected 202, got {resp_del_cart.status_code}: {resp_del_cart.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 940,
+    "name": "Carts Merge",
+    "status": "pending",
+    "code": "def test_carts_merge():\n    customer_id = random_string()\n    session_id = random_string()\n\n    resp_cat = requests.get(get_url(\"catalogue\", \"/catalogue\"), timeout=10)\n    item = resp_cat.json()[0]\n\n    requests.post(get_url(\"carts\", f\"/carts/{session_id}/items\"), json={\"itemId\": item[\"id\"], \"quantity\": 1, \"unitPrice\": item[\"price\"]}, timeout=10)\n\n    resp_merge = requests.get(get_url(\"carts\", f\"/carts/{customer_id}/merge?sessionId={session_id}\"), timeout=10)\n    assert resp_merge.status_code == 202, f\"Expected 202, got {resp_merge.status_code}: {resp_merge.text}\"\n\n    resp_items = requests.get(get_url(\"carts\", f\"/carts/{customer_id}/items\"), timeout=10)\n    assert resp_items.status_code == 200, f\"Expected 200, got {resp_items.status_code}: {resp_items.text}\"\n    items = resp_items.json()\n    assert len(items) > 0\n    assert items[0].get(\"itemId\") == item[\"id\"]",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 941,
+    "name": "Catalogue Endpoints",
+    "status": "pending",
+    "code": "def test_catalogue_endpoints():\n    resp_cat = requests.get(get_url(\"catalogue\", \"/catalogue\"), timeout=10)\n    assert resp_cat.status_code == 200, f\"Expected 200, got {resp_cat.status_code}: {resp_cat.text}\"\n    socks = resp_cat.json()\n    assert len(socks) > 0\n    sock_id = socks[0][\"id\"]\n\n    resp_sock = requests.get(get_url(\"catalogue\", f\"/catalogue/{sock_id}\"), timeout=10)\n    assert resp_sock.status_code == 200, f\"Expected 200, got {resp_sock.status_code}: {resp_sock.text}\"\n    assert resp_sock.json().get(\"id\") == sock_id\n\n    resp_invalid = requests.get(get_url(\"catalogue\", \"/catalogue/invalid_sock_id_123\"), timeout=10)\n    assert resp_invalid.status_code == 404, f\"Expected 404, got {resp_invalid.status_code}: {resp_invalid.text}\"\n\n    resp_tags = requests.get(get_url(\"catalogue\", \"/tags\"), timeout=10)\n    assert resp_tags.status_code == 200, f\"Expected 200, got {resp_tags.status_code}: {resp_tags.text}\"\n    assert \"tags\" in resp_tags.json()\n\n    resp_size = requests.get(get_url(\"catalogue\", \"/catalogue/size\"), timeout=10)\n    assert resp_size.status_code == 200, f\"Expected 200, got {resp_size.status_code}: {resp_size.text}\"\n    assert \"size\" in resp_size.json()\n\n    if socks[0].get(\"imageUrl\") and len(socks[0][\"imageUrl\"]) > 0:\n        image_url = socks[0][\"imageUrl\"][0]\n        image_name = image_url.split(\"/\")[-1]\n        resp_img = requests.get(get_url(\"catalogue\", f\"/catalogue/images/{image_name}\"), timeout=10)\n        assert resp_img.status_code == 200, f\"Expected 200, got {resp_img.status_code}: {resp_img.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 942,
+    "name": "Orders End To End Placement",
+    "status": "pending",
+    "code": "def test_orders_end_to_end_placement():\n    username = random_string()\n    requests.post(get_url(\"user\", \"/register\"), json={\"username\": username, \"password\": \"pwd\", \"email\": f\"{username}@test.com\"}, timeout=10)\n\n    addr_resp = requests.post(get_url(\"user\", \"/addresses\"), json={\"city\": \"London\", \"country\": \"UK\", \"number\": \"10\", \"postcode\": \"EC1A\", \"street\": \"St\", \"userID\": username}, timeout=10)\n    addr_id = addr_resp.json().get(\"id\")\n\n    card_resp = requests.post(get_url(\"user\", \"/cards\"), json={\"ccv\": \"123\", \"expires\": \"12/25\", \"longNum\": \"1234567890123456\", \"userID\": username}, timeout=10)\n    card_id = card_resp.json().get(\"id\")\n\n    cat_resp = requests.get(get_url(\"catalogue\", \"/catalogue\"), timeout=10)\n    item = cat_resp.json()[0]\n\n    requests.post(get_url(\"carts\", f\"/carts/{username}/items\"), json={\"itemId\": item[\"id\"], \"quantity\": 1, \"unitPrice\": item[\"price\"]}, timeout=10)\n\n    order_req = {\n        \"customer\": f\"/customers/{username}\",\n        \"address\": f\"/addresses/{addr_id}\",\n        \"card\": f\"/cards/{card_id}\",\n        \"items\": f\"/carts/{username}/items\"\n    }\n    resp_order = requests.post(get_url(\"orders\", \"/orders\"), json=order_req, timeout=10)\n    assert resp_order.status_code == 201, f\"Expected 201, got {resp_order.status_code}: {resp_order.text}\"\n    order = resp_order.json()\n    order_id = order.get(\"id\")\n    assert order_id is not None\n    assert order.get(\"status\") in [\"CREATED\", \"PAID\", \"SHIPPED\"]\n\n    resp_get_order = requests.get(get_url(\"orders\", f\"/orders/{order_id}\"), timeout=10)\n    assert resp_get_order.status_code == 200, f\"Expected 200, got {resp_get_order.status_code}: {resp_get_order.text}\"\n    fetched_order = resp_get_order.json()\n    assert fetched_order.get(\"id\") == order_id\n    assert fetched_order.get(\"customer\").get(\"username\") == username\n\n    resp_search = requests.get(get_url(\"orders\", f\"/orders/search/customerId?custId={username}\"), timeout=10)\n    assert resp_search.status_code == 200, f\"Expected 200, got {resp_search.status_code}: {resp_search.text}\"\n    customer_orders = resp_search.json().get(\"_embedded\", {}).get(\"customerOrders\", [])\n    assert len(customer_orders) > 0\n    assert customer_orders[0].get(\"id\") == order_id\n\n    resp_pay = requests.get(get_url(\"payment-http\", f\"/payments/{order_id}\"), timeout=10)\n    assert resp_pay.status_code == 200, f\"Expected 200, got {resp_pay.status_code}: {resp_pay.text}\"\n    auths = resp_pay.json()\n    assert len(auths) > 0\n    assert auths[0].get(\"orderId\") == order_id\n\n    resp_ship = requests.get(get_url(\"shipping-http\", f\"/shipping/{order_id}\"), timeout=10)\n    assert resp_ship.status_code == 200, f\"Expected 200, got {resp_ship.status_code}: {resp_ship.text}\"\n    shipment = resp_ship.json()\n    assert shipment.get(\"orderId\") == order_id",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 943,
+    "name": "Orders Placement Negative Empty Cart",
+    "status": "pending",
+    "code": "def test_orders_placement_negative_empty_cart():\n    username = random_string()\n    requests.post(get_url(\"user\", \"/register\"), json={\"username\": username, \"password\": \"pwd\", \"email\": f\"{username}@test.com\"}, timeout=10)\n\n    addr_resp = requests.post(get_url(\"user\", \"/addresses\"), json={\"city\": \"London\", \"country\": \"UK\", \"number\": \"10\", \"postcode\": \"EC1A\", \"street\": \"St\", \"userID\": username}, timeout=10)\n    addr_id = addr_resp.json().get(\"id\")\n\n    card_resp = requests.post(get_url(\"user\", \"/cards\"), json={\"ccv\": \"123\", \"expires\": \"12/25\", \"longNum\": \"1234567890123456\", \"userID\": username}, timeout=10)\n    card_id = card_resp.json().get(\"id\")\n\n    order_req = {\n        \"customer\": f\"/customers/{username}\",\n        \"address\": f\"/addresses/{addr_id}\",\n        \"card\": f\"/cards/{card_id}\",\n        \"items\": f\"/carts/{username}/items\"\n    }\n    resp_order = requests.post(get_url(\"orders\", \"/orders\"), json=order_req, timeout=10)\n    assert resp_order.status_code == 406, f\"Expected 406, got {resp_order.status_code}: {resp_order.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 944,
+    "name": "Orders Placement Negative Invalid Composite Id",
+    "status": "pending",
+    "code": "def test_orders_placement_negative_invalid_composite_id():\n    username = random_string()\n    requests.post(get_url(\"user\", \"/register\"), json={\"username\": username, \"password\": \"pwd\", \"email\": f\"{username}@test.com\"}, timeout=10)\n\n    cat_resp = requests.get(get_url(\"catalogue\", \"/catalogue\"), timeout=10)\n    item = cat_resp.json()[0]\n    requests.post(get_url(\"carts\", f\"/carts/{username}/items\"), json={\"itemId\": item[\"id\"], \"quantity\": 1, \"unitPrice\": item[\"price\"]}, timeout=10)\n\n    order_req = {\n        \"customer\": f\"/customers/{username}\",\n        \"address\": f\"/addresses/invalid_id_format\",\n        \"card\": f\"/cards/invalid_id_format\",\n        \"items\": f\"/carts/{username}/items\"\n    }\n    resp_order = requests.post(get_url(\"orders\", \"/orders\"), json=order_req, timeout=10)\n    assert resp_order.status_code == 404, f\"Expected 404, got {resp_order.status_code}: {resp_order.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 945,
+    "name": "Payment Http Authorization Limits",
+    "status": "pending",
+    "code": "def test_payment_http_authorization_limits():\n    order_id = create_real_order()\n\n    pay_req_declined = {\n        \"address\": {\"city\": \"L\", \"country\": \"UK\", \"number\": \"1\", \"postcode\": \"1\", \"street\": \"S\"},\n        \"amount\": 150.0,\n        \"card\": {\"ccv\": \"123\", \"expires\": \"12/25\", \"longNum\": \"1234\"},\n        \"customer\": {\"firstName\": \"F\", \"lastName\": \"L\"},\n        \"orderId\": order_id\n    }\n    resp_declined = requests.post(get_url(\"payment-http\", \"/payments\"), json=pay_req_declined, timeout=10)\n    assert resp_declined.status_code == 200, f\"Expected 200, got {resp_declined.status_code}: {resp_declined.text}\"\n    assert resp_declined.json().get(\"authorised\") is False\n\n    pay_req_auth = {\n        \"address\": {\"city\": \"L\", \"country\": \"UK\", \"number\": \"1\", \"postcode\": \"1\", \"street\": \"S\"},\n        \"amount\": 50.0,\n        \"card\": {\"ccv\": \"123\", \"expires\": \"12/25\", \"longNum\": \"1234\"},\n        \"customer\": {\"firstName\": \"F\", \"lastName\": \"L\"},\n        \"orderId\": order_id\n    }\n    resp_auth = requests.post(get_url(\"payment-http\", \"/payments\"), json=pay_req_auth, timeout=10)\n    assert resp_auth.status_code == 200, f\"Expected 200, got {resp_auth.status_code}: {resp_auth.text}\"\n    assert resp_auth.json().get(\"authorised\") is True\n\n    resp_get = requests.get(get_url(\"payment-http\", f\"/payments/{order_id}\"), timeout=10)\n    assert resp_get.status_code == 200, f\"Expected 200, got {resp_get.status_code}: {resp_get.text}\"\n    auths = resp_get.json()\n    assert len(auths) >= 2\n    assert auths[-2].get(\"authorised\") is False\n    assert auths[-1].get(\"authorised\") is True",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 946,
+    "name": "Shipping Http Direct",
+    "status": "pending",
+    "code": "def test_shipping_http_direct():\n    order_id = create_real_order()\n    ship_req = {\n        \"address\": {\"city\": \"L\", \"country\": \"UK\", \"number\": \"1\", \"postcode\": \"1\", \"street\": \"S\"},\n        \"itemCount\": 3,\n        \"orderId\": order_id\n    }\n    resp_ship = requests.post(get_url(\"shipping-http\", \"/shipping\"), json=ship_req, timeout=10)\n    assert resp_ship.status_code == 200, f\"Expected 200, got {resp_ship.status_code}: {resp_ship.text}\"\n    shipment = resp_ship.json()\n    assert shipment.get(\"orderId\") == order_id\n\n    resp_get = requests.get(get_url(\"shipping-http\", f\"/shipping/{order_id}\"), timeout=10)\n    assert resp_get.status_code == 200, f\"Expected 200, got {resp_get.status_code}: {resp_get.text}\"\n    fetched_shipment = resp_get.json()\n    assert fetched_shipment.get(\"orderId\") == order_id\n    assert fetched_shipment.get(\"carrier\") == shipment.get(\"carrier\")",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  }
+]

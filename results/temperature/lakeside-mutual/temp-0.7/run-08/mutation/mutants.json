@@ -1,0 +1,554 @@
+[
+  {
+    "mutant_id": "CORE-M01",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "assert 401 == 200"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1359,
+        "name": "Customer Core Create Missing Phone Number",
+        "error": "AssertionError: Expected 500, got 401: | assert 401 == 500"
+      },
+      {
+        "id": 1365,
+        "name": "Customer Self Change Address",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1361,
+        "name": "Customer Management Acknowledge Interactions Empty Id",
+        "error": "assert 401 == 200"
+      },
+      {
+        "id": 1362,
+        "name": "Policy Management Create And Policy",
+        "error": "assert 401 == 200"
+      },
+      {
+        "id": 1358,
+        "name": "Customer Core Update And",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M02",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "assert 401 == 200"
+      },
+      {
+        "id": 1365,
+        "name": "Customer Self Change Address",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1359,
+        "name": "Customer Core Create Missing Phone Number",
+        "error": "AssertionError: Expected 500, got 401: | assert 401 == 500"
+      },
+      {
+        "id": 1361,
+        "name": "Customer Management Acknowledge Interactions Empty Id",
+        "error": "assert 401 == 200"
+      },
+      {
+        "id": 1362,
+        "name": "Policy Management Create And Policy",
+        "error": "assert 401 == 200"
+      },
+      {
+        "id": 1358,
+        "name": "Customer Core Update And",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M03",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "KeyError: 'customerId'"
+      },
+      {
+        "id": 1365,
+        "name": "Customer Self Change Address",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1362,
+        "name": "Policy Management Create And Policy",
+        "error": "KeyError: 'customerId'"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1361,
+        "name": "Customer Management Acknowledge Interactions Empty Id",
+        "error": "KeyError: 'customerId'"
+      },
+      {
+        "id": 1358,
+        "name": "Customer Core Update And",
+        "error": "KeyError: 'customerId'"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M04",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "AssertionError: Expected 200, got 502: { | \"timestamp\" : \"2026-07-10T03:31:46.820+00:00\", | \"status\" : 502, | \"error\" : \"Bad Gateway\", | \"path\" : \"/customers/knb63d3fis\" | } | assert 502 == 200"
+      },
+      {
+        "id": 1358,
+        "name": "Customer Core Update And",
+        "error": "AssertionError: Expected 200, got 404: { | \"timestamp\" : \"2026-07-10T03:32:03.925+00:00\", | \"status\" : 404, | \"error\" : \"Not Found\", | \"path\" : \"/customers/8hon8gd4c4\" | } | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M05",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "AssertionError: Expected 200, got 502: { | \"timestamp\" : \"2026-07-10T03:32:36.358+00:00\", | \"status\" : 502, | \"error\" : \"Bad Gateway\", | \"path\" : \"/customers/butmrw2grb\" | } | assert 502 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M06",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M06",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M07",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "AssertionError: Expected 200, got 502: { | \"timestamp\" : \"2026-07-10T03:34:17.419+00:00\", | \"status\" : 502, | \"error\" : \"Bad Gateway\", | \"path\" : \"/customers/ikyhl2cyqj\" | } | assert 502 == 200"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      },
+      {
+        "id": 1362,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 200, got 424: { | \"timestamp\" : \"2026-07-10T03:34:21.162+00:00\", | \"trace\" : \"com.lakesidemutual.policymanagement.interfaces.dtos.UnknownCustomerException: Failed to find a customer with id '{}'\\n\\tat com.lakesidemutual.policymanagement.interfaces.PolicyInformationHolder.createPolicy(PolicyInformationHolder.java:89)\\n\\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\\n\\tat java.base/java.lang.reflect.Method.invoke(M"
+      },
+      {
+        "id": 1358,
+        "name": "Customer Core Update And",
+        "error": "IndexError: list index out of range"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M08",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M08",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CORE-M09",
+    "service": "customer-core",
+    "image": "lakesidemutual/customer-core:CORE-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "AssertionError: Expected 200, got 502: { | \"timestamp\" : \"2026-07-10T03:35:56.649+00:00\", | \"status\" : 502, | \"error\" : \"Bad Gateway\", | \"path\" : \"/customers/sdy7gzntrf\" | } | assert 502 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M01",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1360,
+        "name": "Customer Management Update Customer",
+        "error": "AssertionError: Expected 200, got 404: { | \"timestamp\" : \"2026-07-10T03:37:15.455+00:00\", | \"status\" : 404, | \"error\" : \"Not Found\", | \"path\" : \"/customers/t2fbzt9pgz\" | } | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M02",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M03",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CMB-M04",
+    "service": "customer-management-backend",
+    "image": "lakesidemutual/customer-management-backend:CMB-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M01",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M01",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1365,
+        "name": "Customer Self Change Address",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M02",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M02",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1365,
+        "name": "Customer Self Change Address",
+        "error": "KeyError: 'token'"
+      },
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "KeyError: 'token'"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "KeyError: 'token'"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M03",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M03",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-10T03:42:52.424+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M04",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M04",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-10T03:43:42.908+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M05",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M05",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M06",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0) | requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 401: | assert 401 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M07",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "AssertionError: Expected 401, got 200: { | \"id\" : 1, | \"date\" : \"2026-07-10T03:46:17.236+00:00\", | \"statusHistory\" : [ { | \"date\" : \"2026-07-10T03:46:17.236+00:00\", | \"status\" : \"REQUEST_SUBMITTED\" | } ], | \"customerInfo\" : { | \"customerId\" : \"n7sulzh556\", | \"firstname\" : \"John\", | \"lastname\" : \"Doe\", | \"contactAddress\" : { | \"streetAddress\" : \"Test Street 1\", | \"postalCode\" : \"8000\", | \"city\" : \"Zurich\" | }, | \"billingAddress\" : { | \"streetAddress\" : \"Test Street 1\", | \"postalCode\" : \"8000\", | "
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: assert 'QUOTE_ACCEPTED' in ['REQUEST_SUBMITTED', 'QUOTE_RECEIVED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M08",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-10T03:47:05.826+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: Expected 200, got 404: { | \"timestamp\" : \"2026-07-10T03:47:21.250+00:00\", | \"status\" : 404, | \"error\" : \"Not Found\", | \"path\" : \"/customers/uaccjuoewq\" | } | assert 404 == 200"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "CSSB-M09",
+    "service": "customer-self-service-backend",
+    "image": "lakesidemutual/customer-self-service-backend:CSSB-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1357,
+        "name": "Customer Self Illegal Status Transition",
+        "error": "AssertionError: Expected 401, got 500: { | \"timestamp\" : \"2026-07-10T03:47:56.476+00:00\", | \"status\" : 500, | \"error\" : \"Internal Server Error\", | \"path\" : \"/insurance-quote-requests/1\" | } | assert 500 == 401"
+      },
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "KeyError: 'customerId'"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M01",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M01",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M02",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M02",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M03",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M03",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M04",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M04",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M05",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M05",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M06",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M06",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1362,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 200, got 424: { | \"timestamp\" : \"2026-07-10T03:53:52.697+00:00\", | \"trace\" : \"com.lakesidemutual.policymanagement.interfaces.dtos.UnknownCustomerException: Failed to find a customer with id '{}'\\n\\tat com.lakesidemutual.policymanagement.interfaces.PolicyInformationHolder.createPolicy(PolicyInformationHolder.java:88)\\n\\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\\n\\tat java.base/java.lang.reflect.Method.invoke(M"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M07",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M07",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1362,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 200, got 404: { | \"timestamp\" : \"2026-07-10T03:54:42.576+00:00\", | \"trace\" : \"com.lakesidemutual.policymanagement.interfaces.dtos.policy.PolicyNotFoundException: Failed to find a policy with id '{}'\\n\\tat com.lakesidemutual.policymanagement.interfaces.PolicyInformationHolder.updatePolicy(PolicyInformationHolder.java:120)\\n\\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\\n\\tat java.base/java.lang.reflect.Method.inv"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M08",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M08",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1362,
+        "name": "Policy Management Create And Policy",
+        "error": "AssertionError: Expected 204, got 200: | assert 200 == 204"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M09",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M09",
+    "killed": true,
+    "killing_tests": [
+      {
+        "id": 1356,
+        "name": "Customer Self Workflow",
+        "error": "AssertionError: assert 'QUOTE_RECEIVED' in ['REQUEST_SUBMITTED']"
+      }
+    ],
+    "error": null
+  },
+  {
+    "mutant_id": "POLICY-M10",
+    "service": "policy-management-backend",
+    "image": "lakesidemutual/policy-management-backend:POLICY-M10",
+    "killed": false,
+    "killing_tests": [],
+    "error": null
+  }
+]

@@ -1,0 +1,128 @@
+[
+  {
+    "id": 1331,
+    "name": "Customer Core Create And Update Customer",
+    "status": "pending",
+    "code": "def test_customer_core_create_and_update_customer():\n    headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    payload = {\n        \"firstname\": \"John\",\n        \"lastname\": \"Doe\",\n        \"streetAddress\": \"123 Main St\",\n        \"postalCode\": \"12345\",\n        \"city\": \"Anytown\",\n        \"email\": f\"john.doe.{uuid.uuid4().hex}@example.com\",\n        \"phoneNumber\": \"555-1234\"\n    }\n    resp = requests.post(get_url(\"customer-core\", \"/customers\"), json=payload, headers=headers, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    customer = resp.json()\n    customer_id = customer[\"customerId\"]\n    assert customer[\"firstname\"] == \"John\"\n\n    update_payload = payload.copy()\n    update_payload[\"firstname\"] = \"Johnny\"\n    resp_update = requests.put(get_url(\"customer-core\", f\"/customers/{customer_id}\"), json=update_payload, headers=headers, timeout=10)\n    assert resp_update.status_code == 200, f\"Expected 200, got {resp_update.status_code}: {resp_update.text}\"\n\n    resp_get = requests.get(get_url(\"customer-core\", f\"/customers/{customer_id}\"), headers=headers, timeout=10)\n    assert resp_get.status_code == 200, f\"Expected 200, got {resp_get.status_code}: {resp_get.text}\"\n    get_data = resp_get.json()\n    assert \"customers\" in get_data, \"Expected 'customers' array in response\"\n    assert len(get_data[\"customers\"]) == 1\n    customer_data = get_data[\"customers\"][0]\n    assert customer_data[\"firstname\"] == \"Johnny\"\n    assert customer_data[\"lastname\"] == \"Doe\"\n    assert customer_data[\"streetAddress\"] == \"123 Main St\"\n    assert customer_data[\"city\"] == \"Anytown\"\n    assert customer_data[\"postalCode\"] == \"12345\"\n    assert \"phoneNumber\" in customer_data",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1332,
+    "name": "Customer Core Missing Phone Number Error",
+    "status": "pending",
+    "code": "def test_customer_core_missing_phone_number_error():\n    headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    payload = {\n        \"firstname\": \"Jane\",\n        \"lastname\": \"Doe\",\n        \"streetAddress\": \"123 Main St\",\n        \"postalCode\": \"12345\",\n        \"city\": \"Anytown\",\n        \"email\": f\"jane.doe.{uuid.uuid4().hex}@example.com\"\n    }\n    resp = requests.post(get_url(\"customer-core\", \"/customers\"), json=payload, headers=headers, timeout=10)\n    assert resp.status_code == 500, f\"Expected 500, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1333,
+    "name": "Self Signup And Register Customer",
+    "status": "pending",
+    "code": "def test_self_service_signup_and_register_customer():\n    email = f\"user.{uuid.uuid4().hex}@example.com\"\n    password = \"Password123!\"\n\n    signup_payload = {\"email\": email, \"password\": password}\n    resp_signup = requests.post(get_url(\"customer-self-service-backend\", \"/auth/signup\"), json=signup_payload, timeout=10)\n    assert resp_signup.status_code == 200, f\"Expected 200, got {resp_signup.status_code}: {resp_signup.text}\"\n    signup_data = resp_signup.json()\n    assert signup_data[\"email\"] == email\n    assert \"customerId\" not in signup_data\n\n    login_payload = {\"email\": email, \"password\": password}\n    resp_login = requests.post(get_url(\"customer-self-service-backend\", \"/auth\"), json=login_payload, timeout=10)\n    assert resp_login.status_code == 200, f\"Expected 200, got {resp_login.status_code}: {resp_login.text}\"\n    token = resp_login.json()[\"token\"]\n    headers = {\"X-Auth-Token\": token}\n\n    resp_user_before = requests.get(get_url(\"customer-self-service-backend\", \"/user\"), headers=headers, timeout=10)\n    assert resp_user_before.status_code == 200, f\"Expected 200, got {resp_user_before.status_code}: {resp_user_before.text}\"\n    assert \"customerId\" not in resp_user_before.json()\n\n    register_payload = {\n        \"firstname\": \"Alice\",\n        \"lastname\": \"Smith\",\n        \"birthday\": \"1990-01-01T00:00:00Z\",\n        \"city\": \"Wonderland\",\n        \"streetAddress\": \"Rabbit Hole 1\",\n        \"postalCode\": \"12345\",\n        \"phoneNumber\": \"555-9876\"\n    }\n    resp_register = requests.post(get_url(\"customer-self-service-backend\", \"/customers\"), json=register_payload, headers=headers, timeout=10)\n    assert resp_register.status_code == 200, f\"Expected 200, got {resp_register.status_code}: {resp_register.text}\"\n    customer_id = resp_register.json()[\"customerId\"]\n\n    resp_user_after = requests.get(get_url(\"customer-self-service-backend\", \"/user\"), headers=headers, timeout=10)\n    assert resp_user_after.status_code == 200, f\"Expected 200, got {resp_user_after.status_code}: {resp_user_after.text}\"\n    assert resp_user_after.json()[\"customerId\"] == customer_id",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1334,
+    "name": "Insurance Quote Request Workflow",
+    "status": "pending",
+    "code": "def test_insurance_quote_request_workflow():\n    email = f\"quote.{uuid.uuid4().hex}@example.com\"\n    password = \"Password123!\"\n    requests.post(get_url(\"customer-self-service-backend\", \"/auth/signup\"), json={\"email\": email, \"password\": password}, timeout=10)\n    token = requests.post(get_url(\"customer-self-service-backend\", \"/auth\"), json={\"email\": email, \"password\": password}, timeout=10).json()[\"token\"]\n    ss_headers = {\"X-Auth-Token\": token}\n\n    register_payload = {\n        \"firstname\": \"Bob\",\n        \"lastname\": \"Builder\",\n        \"birthday\": \"1980-05-05T00:00:00Z\",\n        \"city\": \"Buildville\",\n        \"streetAddress\": \"Construction Site 1\",\n        \"postalCode\": \"54321\",\n        \"phoneNumber\": \"555-4321\"\n    }\n    customer = requests.post(get_url(\"customer-self-service-backend\", \"/customers\"), json=register_payload, headers=ss_headers, timeout=10).json()\n    customer_id = customer[\"customerId\"]\n\n    quote_req_payload = {\n        \"customerInfo\": {\n            \"customerId\": customer_id,\n            \"firstname\": \"Bob\",\n            \"lastname\": \"Builder\",\n            \"contactAddress\": {\"streetAddress\": \"Construction Site 1\", \"postalCode\": \"54321\", \"city\": \"Buildville\"},\n            \"billingAddress\": {\"streetAddress\": \"Construction Site 1\", \"postalCode\": \"54321\", \"city\": \"Buildville\"}\n        },\n        \"insuranceOptions\": {\n            \"startDate\": \"2025-01-01T00:00:00Z\",\n            \"insuranceType\": \"HOME\",\n            \"deductible\": {\"amount\": 500, \"currency\": \"USD\"}\n        }\n    }\n    resp_quote = requests.post(get_url(\"customer-self-service-backend\", \"/insurance-quote-requests\"), json=quote_req_payload, headers=ss_headers, timeout=10)\n    assert resp_quote.status_code == 200, f\"Expected 200, got {resp_quote.status_code}: {resp_quote.text}\"\n    quote_id = resp_quote.json()[\"id\"]\n\n    pm_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    pm_quote_url = get_url(\"policy-management-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    found = False\n    for _ in range(10):\n        if requests.get(pm_quote_url, headers=pm_headers, timeout=10).status_code == 200:\n            found = True\n            break\n        time.sleep(1)\n    assert found, \"Quote request did not propagate to policy-management-backend\"\n\n    draft_payload = {\n        \"status\": \"QUOTE_RECEIVED\",\n        \"expirationDate\": \"2030-12-31T23:59:59Z\",\n        \"insurancePremium\": {\"amount\": 100, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 100000, \"currency\": \"USD\"}\n    }\n    resp_draft = requests.patch(pm_quote_url, json=draft_payload, headers=pm_headers, timeout=10)\n    assert resp_draft.status_code == 200, f\"Expected 200, got {resp_draft.status_code}: {resp_draft.text}\"\n\n    ss_quote_url = get_url(\"customer-self-service-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    received = False\n    for _ in range(10):\n        resp_ss_get = requests.get(ss_quote_url, headers=ss_headers, timeout=10)\n        if resp_ss_get.status_code == 200:\n            status_history = resp_ss_get.json().get(\"statusHistory\", [])\n            if any(s.get(\"status\") == \"QUOTE_RECEIVED\" for s in status_history):\n                received = True\n                break\n        time.sleep(1)\n    assert received, \"QUOTE_RECEIVED status did not propagate to customer-self-service-backend\"\n\n    accept_payload = {\n        \"status\": \"QUOTE_ACCEPTED\",\n        \"expirationDate\": \"2030-12-31T23:59:59Z\",\n        \"insurancePremium\": {\"amount\": 100, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 100000, \"currency\": \"USD\"}\n    }\n    resp_accept = requests.patch(ss_quote_url, json=accept_payload, headers=ss_headers, timeout=10)\n    assert resp_accept.status_code == 200, f\"Expected 200, got {resp_accept.status_code}: {resp_accept.text}\"\n\n    resp_verify = requests.get(ss_quote_url, headers=ss_headers, timeout=10)\n    assert resp_verify.status_code == 200, f\"Expected 200, got {resp_verify.status_code}: {resp_verify.text}\"\n    status_history = resp_verify.json().get(\"statusHistory\", [])\n    assert any(s.get(\"status\") == \"QUOTE_ACCEPTED\" for s in status_history), \"Quote was not accepted\"\n    quote_data = resp_verify.json().get(\"insuranceQuote\", {})\n    assert quote_data.get(\"insurancePremium\", {}).get(\"amount\") == 100\n    assert quote_data.get(\"policyLimit\", {}).get(\"amount\") == 100000",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1335,
+    "name": "Self Illegal Quote Transition Error",
+    "status": "pending",
+    "code": "def test_self_service_illegal_quote_transition_error():\n    email = f\"illegal.{uuid.uuid4().hex}@example.com\"\n    password = \"Password123!\"\n    requests.post(get_url(\"customer-self-service-backend\", \"/auth/signup\"), json={\"email\": email, \"password\": password}, timeout=10)\n    token = requests.post(get_url(\"customer-self-service-backend\", \"/auth\"), json={\"email\": email, \"password\": password}, timeout=10).json()[\"token\"]\n    ss_headers = {\"X-Auth-Token\": token}\n\n    register_payload = {\n        \"firstname\": \"Charlie\",\n        \"lastname\": \"Chaplin\",\n        \"birthday\": \"1980-05-05T00:00:00Z\",\n        \"city\": \"London\",\n        \"streetAddress\": \"Street 1\",\n        \"postalCode\": \"12345\",\n        \"phoneNumber\": \"555-1111\"\n    }\n    customer_id = requests.post(get_url(\"customer-self-service-backend\", \"/customers\"), json=register_payload, headers=ss_headers, timeout=10).json()[\"customerId\"]\n\n    quote_req_payload = {\n        \"customerInfo\": {\n            \"customerId\": customer_id,\n            \"firstname\": \"Charlie\",\n            \"lastname\": \"Chaplin\",\n            \"contactAddress\": {\"streetAddress\": \"Street 1\", \"postalCode\": \"12345\", \"city\": \"London\"},\n            \"billingAddress\": {\"streetAddress\": \"Street 1\", \"postalCode\": \"12345\", \"city\": \"London\"}\n        },\n        \"insuranceOptions\": {\n            \"startDate\": \"2025-01-01T00:00:00Z\",\n            \"insuranceType\": \"HOME\",\n            \"deductible\": {\"amount\": 500, \"currency\": \"USD\"}\n        }\n    }\n    quote_id = requests.post(get_url(\"customer-self-service-backend\", \"/insurance-quote-requests\"), json=quote_req_payload, headers=ss_headers, timeout=10).json()[\"id\"]\n\n    accept_payload = {\n        \"status\": \"QUOTE_ACCEPTED\",\n        \"expirationDate\": \"2030-12-31T23:59:59Z\",\n        \"insurancePremium\": {\"amount\": 100, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 100000, \"currency\": \"USD\"}\n    }\n    ss_quote_url = get_url(\"customer-self-service-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    resp_accept = requests.patch(ss_quote_url, json=accept_payload, headers=ss_headers, timeout=10)\n\n    assert resp_accept.status_code == 401, f\"Expected 401, got {resp_accept.status_code}: {resp_accept.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1336,
+    "name": "Policy Management Create And Policy",
+    "status": "pending",
+    "code": "def test_policy_management_create_and_delete_policy():\n    core_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    customer_payload = {\n        \"firstname\": \"Dave\",\n        \"lastname\": \"Grohl\",\n        \"streetAddress\": \"123 Rock St\",\n        \"postalCode\": \"98765\",\n        \"city\": \"Seattle\",\n        \"email\": f\"dave.{uuid.uuid4().hex}@example.com\",\n        \"phoneNumber\": \"555-5555\"\n    }\n    customer_id = requests.post(get_url(\"customer-core\", \"/customers\"), json=customer_payload, headers=core_headers, timeout=10).json()[\"customerId\"]\n\n    pm_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    policy_payload = {\n        \"customerId\": customer_id,\n        \"policyType\": \"AUTO\",\n        \"policyPeriod\": {\n            \"startDate\": \"2024-01-01T00:00:00Z\",\n            \"endDate\": \"2025-01-01T00:00:00Z\"\n        },\n        \"deductible\": {\"amount\": 500, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 100000, \"currency\": \"USD\"},\n        \"insurancePremium\": {\"amount\": 1000, \"currency\": \"USD\"},\n        \"insuringAgreement\": {\n            \"agreementItems\": [\n                {\"title\": \"Coverage A\", \"description\": \"Liability\"}\n            ]\n        }\n    }\n    resp_policy = requests.post(get_url(\"policy-management-backend\", \"/policies\"), json=policy_payload, headers=pm_headers, timeout=10)\n    assert resp_policy.status_code == 200, f\"Expected 200, got {resp_policy.status_code}: {resp_policy.text}\"\n    policy_id = resp_policy.json()[\"policyId\"]\n\n    resp_get = requests.get(get_url(\"policy-management-backend\", f\"/policies/{policy_id}\"), headers=pm_headers, timeout=10)\n    assert resp_get.status_code == 200, f\"Expected 200, got {resp_get.status_code}: {resp_get.text}\"\n    policy_data = resp_get.json()\n    assert policy_data[\"customer\"] == customer_id\n    assert policy_data[\"policyType\"] == \"AUTO\"\n    assert policy_data[\"deductible\"][\"amount\"] == 500\n    assert policy_data[\"policyLimit\"][\"amount\"] == 100000\n    assert policy_data[\"insurancePremium\"][\"amount\"] == 1000\n    assert \"startDate\" in policy_data[\"policyPeriod\"]\n    assert \"endDate\" in policy_data[\"policyPeriod\"]\n    assert policy_data[\"insuringAgreement\"][\"agreementItems\"][0][\"title\"] == \"Coverage A\"\n    assert policy_data[\"insuringAgreement\"][\"agreementItems\"][0][\"description\"] == \"Liability\"\n\n    resp_delete = requests.delete(get_url(\"policy-management-backend\", f\"/policies/{policy_id}\"), headers=pm_headers, timeout=10)\n    assert resp_delete.status_code == 204, f\"Expected 204, got {resp_delete.status_code}: {resp_delete.text}\"\n\n    resp_list = requests.get(get_url(\"policy-management-backend\", f\"/customers/{customer_id}/policies\"), headers=pm_headers, timeout=10)\n    assert resp_list.status_code == 200\n    policies = resp_list.json()\n    assert all(p[\"policyId\"] != policy_id for p in policies), \"Deleted policy still found in customer policies\"",
+    "endpoint": {
+      "path": "",
+      "method": "DELETE",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1337,
+    "name": "Customer Management Empty Interaction Acknowledgement Error",
+    "status": "pending",
+    "code": "def test_customer_management_empty_interaction_acknowledgement_error():\n    core_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    customer_payload = {\n        \"firstname\": \"Eve\",\n        \"lastname\": \"Smith\",\n        \"streetAddress\": \"123 Eve St\",\n        \"postalCode\": \"11111\",\n        \"city\": \"Eveville\",\n        \"email\": f\"eve.{uuid.uuid4().hex}@example.com\",\n        \"phoneNumber\": \"555-0000\"\n    }\n    customer_id = requests.post(get_url(\"customer-core\", \"/customers\"), json=customer_payload, headers=core_headers, timeout=10).json()[\"customerId\"]\n\n    payload = {\"lastAcknowledgedInteractionId\": \"\"}\n    resp = requests.patch(get_url(\"customer-management-backend\", f\"/interaction-logs/{customer_id}\"), json=payload, timeout=10)\n\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1338,
+    "name": "Customer Management Interaction Log Not Found Error",
+    "status": "pending",
+    "code": "def test_customer_management_interaction_log_not_found_error():\n    core_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    customer_payload = {\n        \"firstname\": \"Frank\",\n        \"lastname\": \"Ocean\",\n        \"streetAddress\": \"123 Ocean St\",\n        \"postalCode\": \"22222\",\n        \"city\": \"Oceanville\",\n        \"email\": f\"frank.{uuid.uuid4().hex}@example.com\",\n        \"phoneNumber\": \"555-2222\"\n    }\n    customer_id = requests.post(get_url(\"customer-core\", \"/customers\"), json=customer_payload, headers=core_headers, timeout=10).json()[\"customerId\"]\n\n    payload = {\"lastAcknowledgedInteractionId\": \"some-interaction-id\"}\n    resp = requests.patch(get_url(\"customer-management-backend\", f\"/interaction-logs/{customer_id}\"), json=payload, timeout=10)\n\n    assert resp.status_code == 404, f\"Expected 404, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  },
+  {
+    "id": 1339,
+    "name": "Policy Management Compute Risk Factor",
+    "status": "pending",
+    "code": "def test_policy_management_compute_risk_factor():\n    pm_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    payload = {\n        \"birthday\": \"1990-01-01T00:00:00Z\",\n        \"postalCode\": \"12345\"\n    }\n    resp = requests.post(get_url(\"policy-management-backend\", \"/riskfactor/compute\"), json=payload, headers=pm_headers, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    assert \"riskFactor\" in resp.json()",
+    "endpoint": {
+      "path": "",
+      "method": "PUT",
+      "params": {}
+    },
+    "lastRun": null,
+    "duration": 0.0,
+    "errorMessage": null
+  }
+]

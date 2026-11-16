@@ -1,0 +1,142 @@
+[
+  {
+    "id": 807,
+    "name": "Customer Core Create Customer Missing Phone Number",
+    "status": "passed",
+    "code": "def test_customer_core_create_customer_missing_phone_number():\n    headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    payload = {\n        \"firstname\": \"Jane\",\n        \"lastname\": \"Doe\",\n        \"streetAddress\": \"123 Main St\",\n        \"postalCode\": \"12345\",\n        \"city\": \"Anytown\",\n        \"email\": f\"jane.doe.{uuid.uuid4()}@example.com\"\n    }\n    url = get_url(\"customer-core\", \"/customers\")\n    resp = requests.post(url, json=payload, headers=headers, timeout=10)\n    assert resp.status_code == 500, f\"Expected 500, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:05.936627",
+    "duration": 0.31,
+    "errorMessage": null
+  },
+  {
+    "id": 809,
+    "name": "Customer Core Cities For Postal Code",
+    "status": "passed",
+    "code": "def test_customer_core_get_cities_for_postal_code():\n    headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    payload = {\n        \"firstname\": \"Harry\",\n        \"lastname\": \"Potter\",\n        \"streetAddress\": \"4 Privet Drive\",\n        \"postalCode\": \"KT8\",\n        \"city\": \"Little Whinging\",\n        \"email\": f\"harry.{uuid.uuid4()}@example.com\",\n        \"phoneNumber\": \"555-7777\"\n    }\n    url = get_url(\"customer-core\", \"/customers\")\n    resp = requests.post(url, json=payload, headers=headers, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n\n    cities_url = get_url(\"customer-core\", f\"/cities/{payload['postalCode']}\")\n    cities_resp = requests.get(cities_url, headers=headers, timeout=10)\n    assert cities_resp.status_code == 200, f\"Expected 200, got {cities_resp.status_code}: {cities_resp.text}\"\n    assert \"cities\" in cities_resp.json()",
+    "endpoint": {
+      "path": "",
+      "method": "GET",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:09.431786",
+    "duration": 0.35,
+    "errorMessage": null
+  },
+  {
+    "id": 810,
+    "name": "Policy Management Create Policy And",
+    "status": "passed",
+    "code": "def test_policy_management_create_policy_and_delete():\n    cc_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    cc_payload = {\n        \"firstname\": \"Alice\",\n        \"lastname\": \"Smith\",\n        \"streetAddress\": \"456 Elm St\",\n        \"postalCode\": \"67890\",\n        \"city\": \"Othertown\",\n        \"email\": f\"alice.{uuid.uuid4()}@example.com\",\n        \"phoneNumber\": \"555-5678\"\n    }\n    cc_url = get_url(\"customer-core\", \"/customers\")\n    cc_resp = requests.post(cc_url, json=cc_payload, headers=cc_headers, timeout=10)\n    assert cc_resp.status_code == 200, f\"Expected 200, got {cc_resp.status_code}: {cc_resp.text}\"\n    customer_id = cc_resp.json()[\"customerId\"]\n\n    pm_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    pm_payload = {\n        \"customerId\": customer_id,\n        \"policyType\": \"Life\",\n        \"policyPeriod\": {\"startDate\": \"2023-01-01T00:00:00Z\", \"endDate\": \"2024-01-01T00:00:00Z\"},\n        \"deductible\": {\"amount\": 500, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 100000, \"currency\": \"USD\"},\n        \"insurancePremium\": {\"amount\": 1000, \"currency\": \"USD\"},\n        \"insuringAgreement\": {\"agreementItems\": [{\"title\": \"Item 1\", \"description\": \"Desc 1\"}]}\n    }\n    pm_url = get_url(\"policy-management-backend\", \"/policies\")\n    pm_resp = requests.post(pm_url, json=pm_payload, headers=pm_headers, timeout=10)\n    assert pm_resp.status_code == 200, f\"Expected 200, got {pm_resp.status_code}: {pm_resp.text}\"\n    policy_id = pm_resp.json()[\"policyId\"]\n\n    pm_get_url = get_url(\"policy-management-backend\", f\"/policies/{policy_id}\")\n    pm_get_resp = requests.get(pm_get_url, headers=pm_headers, timeout=10)\n    assert pm_get_resp.status_code == 200, f\"Expected 200, got {pm_get_resp.status_code}: {pm_get_resp.text}\"\n    policy_data = pm_get_resp.json()\n    assert policy_data[\"policyId\"] == policy_id\n    assert policy_data[\"customer\"] == customer_id\n    assert policy_data[\"policyType\"] == \"Life\"\n\n    pm_del_resp = requests.delete(pm_get_url, headers=pm_headers, timeout=10)\n    assert pm_del_resp.status_code == 204, f\"Expected 204, got {pm_del_resp.status_code}: {pm_del_resp.text}\"\n\n    pm_list_url = get_url(\"policy-management-backend\", \"/policies\")\n    pm_list_resp = requests.get(pm_list_url, headers=pm_headers, timeout=10)\n    assert pm_list_resp.status_code == 200, f\"Expected 200, got {pm_list_resp.status_code}: {pm_list_resp.text}\"\n    policies = pm_list_resp.json().get(\"policies\", [])\n    assert all(p[\"policyId\"] != policy_id for p in policies)",
+    "endpoint": {
+      "path": "",
+      "method": "DELETE",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:11.326939",
+    "duration": 0.65,
+    "errorMessage": null
+  },
+  {
+    "id": 811,
+    "name": "Customer Self Signup Login Register",
+    "status": "passed",
+    "code": "def test_customer_self_service_signup_login_register():\n    email = f\"user.{uuid.uuid4()}@example.com\"\n    password = \"password123\"\n\n    signup_url = get_url(\"customer-self-service-backend\", \"/auth/signup\")\n    signup_resp = requests.post(signup_url, json={\"email\": email, \"password\": password}, timeout=10)\n    assert signup_resp.status_code == 200, f\"Expected 200, got {signup_resp.status_code}: {signup_resp.text}\"\n    assert signup_resp.json()[\"email\"] == email\n    assert \"customerId\" not in signup_resp.json()\n\n    login_url = get_url(\"customer-self-service-backend\", \"/auth\")\n    login_resp = requests.post(login_url, json={\"email\": email, \"password\": password}, timeout=10)\n    assert login_resp.status_code == 200, f\"Expected 200, got {login_resp.status_code}: {login_resp.text}\"\n    token = login_resp.json()[\"token\"]\n\n    headers = {\"X-Auth-Token\": token}\n    reg_payload = {\n        \"firstname\": \"Bob\",\n        \"lastname\": \"Builder\",\n        \"birthday\": \"1980-01-01T00:00:00Z\",\n        \"city\": \"Constructville\",\n        \"streetAddress\": \"123 Build St\",\n        \"postalCode\": \"12345\",\n        \"phoneNumber\": \"555-9876\"\n    }\n    reg_url = get_url(\"customer-self-service-backend\", \"/customers\")\n    reg_resp = requests.post(reg_url, json=reg_payload, headers=headers, timeout=10)\n    assert reg_resp.status_code == 200, f\"Expected 200, got {reg_resp.status_code}: {reg_resp.text}\"\n    customer_id = reg_resp.json()[\"customerId\"]\n\n    get_cust_url = get_url(\"customer-self-service-backend\", f\"/customers/{customer_id}\")\n    get_cust_resp = requests.get(get_cust_url, headers=headers, timeout=10)\n    assert get_cust_resp.status_code == 200, f\"Expected 200, got {get_cust_resp.status_code}: {get_cust_resp.text}\"\n    assert get_cust_resp.json()[\"customerId\"] == customer_id\n\n    user_url = get_url(\"customer-self-service-backend\", \"/user\")\n    user_resp = requests.get(user_url, headers=headers, timeout=10)\n    assert user_resp.status_code == 200, f\"Expected 200, got {user_resp.status_code}: {user_resp.text}\"\n    assert user_resp.json()[\"customerId\"] == customer_id",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:13.230561",
+    "duration": 0.53,
+    "errorMessage": null
+  },
+  {
+    "id": 812,
+    "name": "Customer Self Insurance Quote Workflow Illegal Transition",
+    "status": "passed",
+    "code": "def test_customer_self_service_insurance_quote_workflow_illegal_transition():\n    email = f\"user.{uuid.uuid4()}@example.com\"\n    password = \"password123\"\n\n    requests.post(get_url(\"customer-self-service-backend\", \"/auth/signup\"), json={\"email\": email, \"password\": password}, timeout=10)\n    login_resp = requests.post(get_url(\"customer-self-service-backend\", \"/auth\"), json={\"email\": email, \"password\": password}, timeout=10)\n    token = login_resp.json()[\"token\"]\n    headers = {\"X-Auth-Token\": token}\n\n    reg_payload = {\n        \"firstname\": \"Charlie\",\n        \"lastname\": \"Chaplin\",\n        \"birthday\": \"1980-01-01T00:00:00Z\",\n        \"city\": \"London\",\n        \"streetAddress\": \"123 Silent St\",\n        \"postalCode\": \"12345\",\n        \"phoneNumber\": \"555-1111\"\n    }\n    reg_resp = requests.post(get_url(\"customer-self-service-backend\", \"/customers\"), json=reg_payload, headers=headers, timeout=10)\n    customer_id = reg_resp.json()[\"customerId\"]\n\n    quote_payload = {\n        \"customerInfo\": {\n            \"customerId\": customer_id,\n            \"firstname\": \"Charlie\",\n            \"lastname\": \"Chaplin\",\n            \"contactAddress\": {\"streetAddress\": \"123 Silent St\", \"postalCode\": \"12345\", \"city\": \"London\"},\n            \"billingAddress\": {\"streetAddress\": \"123 Silent St\", \"postalCode\": \"12345\", \"city\": \"London\"}\n        },\n        \"insuranceOptions\": {\n            \"startDate\": \"2023-01-01T00:00:00Z\",\n            \"insuranceType\": \"Life\",\n            \"deductible\": {\"amount\": 500, \"currency\": \"USD\"}\n        }\n    }\n    quote_url = get_url(\"customer-self-service-backend\", \"/insurance-quote-requests\")\n    quote_resp = requests.post(quote_url, json=quote_payload, headers=headers, timeout=10)\n    assert quote_resp.status_code == 200, f\"Expected 200, got {quote_resp.status_code}: {quote_resp.text}\"\n    quote_id = quote_resp.json()[\"id\"]\n\n    get_quote_url = get_url(\"customer-self-service-backend\", f\"/insurance-quote-requests/{quote_id}\")\n    get_quote_resp = requests.get(get_quote_url, headers=headers, timeout=10)\n    assert get_quote_resp.status_code == 200, f\"Expected 200, got {get_quote_resp.status_code}: {get_quote_resp.text}\"\n    assert get_quote_resp.json()[\"id\"] == quote_id\n\n    patch_payload = {\n        \"status\": \"QUOTE_ACCEPTED\",\n        \"expirationDate\": \"2024-01-01T00:00:00Z\",\n        \"insurancePremium\": {\"amount\": 1000, \"currency\": \"USD\"},\n        \"policyLimit\": {\"amount\": 100000, \"currency\": \"USD\"}\n    }\n    patch_resp = requests.patch(get_quote_url, json=patch_payload, headers=headers, timeout=10)\n    assert patch_resp.status_code == 401, f\"Expected 401, got {patch_resp.status_code}: {patch_resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:15.036202",
+    "duration": 0.53,
+    "errorMessage": null
+  },
+  {
+    "id": 813,
+    "name": "Customer Management Acknowledge Interactions Invalid Body",
+    "status": "passed",
+    "code": "def test_customer_management_acknowledge_interactions_invalid_body():\n    cc_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    cc_payload = {\n        \"firstname\": \"Eve\",\n        \"lastname\": \"Adams\",\n        \"streetAddress\": \"123 Eden St\",\n        \"postalCode\": \"11111\",\n        \"city\": \"Paradise\",\n        \"email\": f\"eve.{uuid.uuid4()}@example.com\",\n        \"phoneNumber\": \"555-0000\"\n    }\n    cc_url = get_url(\"customer-core\", \"/customers\")\n    cc_resp = requests.post(cc_url, json=cc_payload, headers=cc_headers, timeout=10)\n    assert cc_resp.status_code == 200, f\"Expected 200, got {cc_resp.status_code}: {cc_resp.text}\"\n    customer_id = cc_resp.json()[\"customerId\"]\n\n    url = get_url(\"customer-management-backend\", f\"/interaction-logs/{customer_id}\")\n    payload = {\"lastAcknowledgedInteractionId\": \"\"}\n    resp = requests.patch(url, json=payload, timeout=10)\n    assert resp.status_code == 400, f\"Expected 400, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:16.721943",
+    "duration": 0.31,
+    "errorMessage": null
+  },
+  {
+    "id": 814,
+    "name": "Customer Management Acknowledge Interactions Not Found",
+    "status": "passed",
+    "code": "def test_customer_management_acknowledge_interactions_not_found():\n    cc_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    cc_payload = {\n        \"firstname\": \"Dave\",\n        \"lastname\": \"Mustaine\",\n        \"streetAddress\": \"123 Metal St\",\n        \"postalCode\": \"66666\",\n        \"city\": \"Los Angeles\",\n        \"email\": f\"dave.{uuid.uuid4()}@example.com\",\n        \"phoneNumber\": \"555-6666\"\n    }\n    cc_url = get_url(\"customer-core\", \"/customers\")\n    cc_resp = requests.post(cc_url, json=cc_payload, headers=cc_headers, timeout=10)\n    assert cc_resp.status_code == 200, f\"Expected 200, got {cc_resp.status_code}: {cc_resp.text}\"\n    customer_id = cc_resp.json()[\"customerId\"]\n\n    cm_url = get_url(\"customer-management-backend\", f\"/interaction-logs/{customer_id}\")\n    payload = {\"lastAcknowledgedInteractionId\": \"interaction-123\"}\n    resp = requests.patch(cm_url, json=payload, timeout=10)\n    assert resp.status_code == 404, f\"Expected 404, got {resp.status_code}: {resp.text}\"",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:18.520799",
+    "duration": 0.31,
+    "errorMessage": null
+  },
+  {
+    "id": 815,
+    "name": "Customer Management Update Customer",
+    "status": "passed",
+    "code": "def test_customer_management_update_customer():\n    cc_headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    cc_payload = {\n        \"firstname\": \"George\",\n        \"lastname\": \"Harrison\",\n        \"streetAddress\": \"123 Abbey Rd\",\n        \"postalCode\": \"NW8\",\n        \"city\": \"London\",\n        \"email\": f\"george.{uuid.uuid4()}@example.com\",\n        \"phoneNumber\": \"555-4321\"\n    }\n    cc_url = get_url(\"customer-core\", \"/customers\")\n    cc_resp = requests.post(cc_url, json=cc_payload, headers=cc_headers, timeout=10)\n    assert cc_resp.status_code == 200, f\"Expected 200, got {cc_resp.status_code}: {cc_resp.text}\"\n    customer_id = cc_resp.json()[\"customerId\"]\n\n    cm_payload = {\n        \"firstname\": \"George\",\n        \"lastname\": \"Harrison\",\n        \"birthday\": \"1943-02-25T00:00:00Z\",\n        \"email\": cc_payload[\"email\"],\n        \"phoneNumber\": \"555-9999\",\n        \"moveHistory\": []\n    }\n    cm_url = get_url(\"customer-management-backend\", f\"/customers/{customer_id}\")\n    cm_resp = requests.put(cm_url, json=cm_payload, timeout=10)\n    assert cm_resp.status_code == 200, f\"Expected 200, got {cm_resp.status_code}: {cm_resp.text}\"\n\n    cm_get_resp = requests.get(cm_url, timeout=10)\n    assert cm_get_resp.status_code == 200, f\"Expected 200, got {cm_get_resp.status_code}: {cm_get_resp.text}\"\n    assert cm_get_resp.json()[\"customerId\"] == customer_id",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:20.420876",
+    "duration": 0.37,
+    "errorMessage": null
+  },
+  {
+    "id": 806,
+    "name": "Customer Core Create And Customer",
+    "status": "passed",
+    "code": "def test_customer_core_create_and_get_customer():\n    headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    payload = {\n        \"firstname\": \"John\",\n        \"lastname\": \"Doe\",\n        \"streetAddress\": \"123 Main St\",\n        \"postalCode\": \"12345\",\n        \"city\": \"Anytown\",\n        \"email\": f\"john.doe.{uuid.uuid4()}@example.com\",\n        \"phoneNumber\": \"555-1234\"\n    }\n    url = get_url(\"customer-core\", \"/customers\")\n    resp = requests.post(url, json=payload, headers=headers, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    data = resp.json()\n    customer_id = data[\"customerId\"]\n\n    get_url_path = get_url(\"customer-core\", f\"/customers/{customer_id}\")\n    get_resp = requests.get(get_url_path, headers=headers, timeout=10)\n    assert get_resp.status_code == 200, f\"Expected 200, got {get_resp.status_code}: {get_resp.text}\"\n    get_data = get_resp.json()\n    customer = get_data[\"customers\"][0]\n    assert customer[\"customerId\"] == customer_id\n    assert customer[\"firstname\"] == payload[\"firstname\"]\n    assert customer[\"lastname\"] == payload[\"lastname\"]\n    assert customer[\"email\"] == payload[\"email\"]\n    assert \"phoneNumber\" in customer",
+    "endpoint": {
+      "path": "",
+      "method": "GET",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:04.134486",
+    "duration": 0.32,
+    "errorMessage": null
+  },
+  {
+    "id": 808,
+    "name": "Customer Core Update Address",
+    "status": "passed",
+    "code": "def test_customer_core_update_address():\n    headers = {\"Authorization\": \"Bearer b318ad736c6c844b\"}\n    payload = {\n        \"firstname\": \"Frank\",\n        \"lastname\": \"Zappa\",\n        \"streetAddress\": \"123 Music St\",\n        \"postalCode\": \"90210\",\n        \"city\": \"Los Angeles\",\n        \"email\": f\"frank.{uuid.uuid4()}@example.com\",\n        \"phoneNumber\": \"555-1234\"\n    }\n    url = get_url(\"customer-core\", \"/customers\")\n    resp = requests.post(url, json=payload, headers=headers, timeout=10)\n    assert resp.status_code == 200, f\"Expected 200, got {resp.status_code}: {resp.text}\"\n    customer_id = resp.json()[\"customerId\"]\n\n    addr_payload = {\n        \"streetAddress\": \"456 New St\",\n        \"postalCode\": \"90211\",\n        \"city\": \"Beverly Hills\"\n    }\n    addr_url = get_url(\"customer-core\", f\"/customers/{customer_id}/address\")\n    addr_resp = requests.put(addr_url, json=addr_payload, headers=headers, timeout=10)\n    assert addr_resp.status_code == 200, f\"Expected 200, got {addr_resp.status_code}: {addr_resp.text}\"\n\n    get_url_path = get_url(\"customer-core\", f\"/customers/{customer_id}\")\n    get_resp = requests.get(get_url_path, headers=headers, timeout=10)\n    assert get_resp.status_code == 200, f\"Expected 200, got {get_resp.status_code}: {get_resp.text}\"\n    customer = get_resp.json()[\"customers\"][0]\n    assert customer[\"streetAddress\"] == addr_payload[\"streetAddress\"]\n    assert customer[\"postalCode\"] == addr_payload[\"postalCode\"]\n    assert customer[\"city\"] == addr_payload[\"city\"]",
+    "endpoint": {
+      "path": "",
+      "method": "",
+      "params": {}
+    },
+    "lastRun": "2026-07-08T11:50:07.733302",
+    "duration": 0.32,
+    "errorMessage": null
+  }
+]
