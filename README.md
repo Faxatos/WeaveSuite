@@ -1,6 +1,6 @@
 # WeaveSuite
 
-WeaveSuite generates suites of **system tests for microservice applications running on Kubernetes** with a Large Language Model, keeping a human in the loop:
+WeaveSuite generates suites of system tests for microservice applications running on Kubernetes with a Large Language Model, keeping a human in the loop:
 1. **Discover:** once deployed in the cluster, it finds the live microservices and retrieves their OpenAPI specifications.
 2. **Verify the specifications:** an operator checks that every microservice was discovered and that each specification is complete enough to write black-box tests from.
 3. **Generate:** the verified specifications are given to the LLM (Google Gemini 3.1 Pro), which writes a pytest suite of system tests.
@@ -14,14 +14,6 @@ WeaveSuite generates suites of **system tests for microservice applications runn
 | [`WeaveSuiteUI/`](WeaveSuiteUI) | Next.js web interface (thesis Sec. 4.1.3) for reviewing specifications and tests and viewing coverage. |
 | [`mutants/`](mutants) | The 96 mutants used for mutation testing (37 SockShop, 27 KubePay, 32 Lakeside Mutual), one patch each, with their catalogue. |
 | [`results/`](results) | The raw data of every run reported in the article and the thesis, with a script that recomputes every reported number. |
-
-## Reproducing the reported numbers
-
-```bash
-python results/scripts/recompute_aggregates.py
-```
-
-Python 3 standard library only, no cluster needed. The script recomputes every mean, standard deviation, spread and normalized score reported in the article (Fig. 2, Sec. IV) and in the thesis from the per-run data in [`results/`](results), and prints each one next to the reported value. [`results/README.md`](results/README.md) maps every table and figure to its folders and explains the content of a run.
 
 ## Applications under test
 
@@ -62,4 +54,4 @@ Main backend endpoints:
 
 ## License
 
-[MIT](LICENSE).
+Distributed under the MIT License. See `LICENSE.txt` for more information.
